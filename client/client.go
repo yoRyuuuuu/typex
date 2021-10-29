@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"time"
 
 	"github.com/yoRyuuuuu/typex/typex-server/proto"
 	"google.golang.org/grpc/metadata"
@@ -53,8 +54,10 @@ func (c *GameClient) Start() {
 			}
 
 			switch res.GetAction().(type) {
+			case *proto.Response_Question:
+				c.handleQuestionResponse(res)
 			case *proto.Response_Start:
-				c.handleRoundStartResponse(res)
+				c.handleStartResponse(res)
 			}
 		}
 	}()
@@ -81,6 +84,17 @@ func (c *GameClient) Start() {
 	}
 }
 
-func (c *GameClient) handleRoundStartResponse(res *proto.Response) {
-	fmt.Printf("problem: %v\n", res.GetQuestion().GetText())
+func (c *GameClient) handleQuestionResponse(res *proto.Response) {
+	fmt.Printf("%v\n", res.GetQuestion().GetText())
+}
+
+func (c *GameClient) handleStartResponse(res *proto.Response) {
+	limit := 5 * time.Second
+	count := 0
+	output := []string{"4", "3", "2", "1", "start!!"}
+	for begin := time.Now(); time.Since(begin) < limit; {
+		fmt.Println(output[count])
+		count += 1
+		time.Sleep(1 * time.Second)
+	}
 }

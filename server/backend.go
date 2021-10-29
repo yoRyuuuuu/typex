@@ -49,19 +49,22 @@ func NewGame() *Game {
 }
 
 func (g *Game) Start() {
-	go func() {
-		for {
-			if g.Player >= MaxPlayer && g.WaitForRound {
-				g.EventChannel <- StartEvent{}
-				time.Sleep(5 * time.Second)
-				g.WaitForRound = false
-				g.EventChannel <- QuestionEvent{}
-				return
-			}
-		}
-	}()
-
+	go g.watchPlayerCount()
 	go g.watchAction()
+}
+
+func (g *Game) watchPlayerCount() {
+	for g.Player < MaxPlayer {
+		continue
+	}
+
+	time.Sleep(1 * time.Second)
+	g.EventChannel <- StartEvent{}
+	time.Sleep(5 * time.Second)
+	g.WaitForRound = false
+	for id := range g.Name {
+		g.Question(id)
+	}
 }
 
 func (g *Game) watchAction() {
@@ -95,13 +98,16 @@ func (game *Game) AddScore(id uuid.UUID) {
 }
 
 func (action AnswerAction) Perform(game *Game) {
-	problems := game.Problems[action.ID]
 	game.AddScore(action.ID)
 	name := game.Name[action.ID]
 	log.Printf("%v's score is %v", name, game.Score[action.ID])
+	game.Question(action.ID)
+}
 
-	game.EventChannel <- QuestionEvent{
-		ID:   action.ID,
+func (g *Game) Question(id uuid.UUID) {
+	problems := g.Problems[id]
+	g.EventChannel <- QuestionEvent{
+		ID:   id,
 		Text: problems.Next(),
 	}
 }

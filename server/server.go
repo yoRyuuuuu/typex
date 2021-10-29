@@ -42,7 +42,7 @@ func NewGameServer(game *Game) *GameServer {
 		clients: make(map[uuid.UUID]*client),
 		game:    game,
 	}
-	go server.watchChanges()
+	go server.watchEvent()
 	go server.watchTimeout()
 	return server
 }
@@ -145,12 +145,15 @@ func (s *GameServer) handleAnswerRequest(req *proto.Request, clt *client) {
 }
 
 // backendから通知される変更の処理
-func (s *GameServer) watchChanges() {
+func (s *GameServer) watchEvent() {
 	for {
-		change := <-s.game.EventChannel
-		switch change.(type) {
+		event := <-s.game.EventChannel
+		switch event.(type) {
 		case StartEvent:
 			s.handleStartEvent()
+		case QuestionEvent:
+			event := event.(QuestionEvent)
+			s.handleQuestionEvent(event)
 		}
 	}
 }
@@ -172,7 +175,10 @@ func (s *GameServer) handleStartEvent() {
 	}
 }
 
-func (s *GameServer) handleQuestionEvent(id uuid.UUID, text string) {
+func (s *GameServer) handleQuestionEvent(event QuestionEvent) {
+	id := event.ID
+	text := event.Text
+
 	clt := s.clients[id]
 	if clt == nil {
 		return
