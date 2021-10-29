@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+option go_package = "github.com/yoRyuuuuu/typex/proto";
+
+service Game {
+    rpc Connect (ConnectRequest) returns (ConnectResponse) {}
+    rpc Stream(stream Request) returns (stream Response) {}
+}
+
+message ConnectRequest {
+    string name = 1;
+}
+
+message ConnectResponse {
+    string token = 1;
+}
+
+message Answer {
+}
+
+message Question {
+    string text = 1;
+}
+
+message Update {
+}
+
+message Start {
+    string problem = 1;
+}
+
+message Request {
+    oneof action {
+        Answer answer = 1;
+    }
+}
+
+message Response {
+    oneof action {
+        Update update = 1;
+        Question question = 2;
+        Start start = 3;
+    }
+}
