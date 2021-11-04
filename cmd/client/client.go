@@ -11,11 +11,12 @@ import (
 )
 
 func main() {
-	port := flag.Int("port", 8080, "The port to listen on.")
+	address := flag.String("addr", "localhost", "The address to listen on.")
+	port := flag.Int("port", 8743, "The port to listen on.")
 	name := flag.String("name", "Hoge", "Player name")
 	flag.Parse()
 
-	conn, err := grpc.Dial(fmt.Sprintf("localhost:%v", *port), grpc.WithInsecure())
+	conn, err := grpc.Dial(fmt.Sprintf("%v:%v", *address, *port), grpc.WithInsecure())
 	if err != nil {
 		log.Fatalf("can Not connect with server %v", err)
 	}

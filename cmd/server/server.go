@@ -1,6 +1,8 @@
 package main
 
 import (
+	"flag"
+	"fmt"
 	"log"
 	"net"
 
@@ -9,11 +11,11 @@ import (
 	"google.golang.org/grpc"
 )
 
-var port = ":8080"
-
 func main() {
-	log.Printf("listening on port %s", port)
-	lis, err := net.Listen("tcp", port)
+	port := flag.String("port", "8743", "The port to listen")
+	flag.Parse()
+	log.Printf("listening on port %s", *port)
+	lis, err := net.Listen("tcp", fmt.Sprintf(":%v", *port))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
