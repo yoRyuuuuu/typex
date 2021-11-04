@@ -10,6 +10,7 @@ import (
 )
 
 const MaxPlayer = 2
+const MaxScore = 10
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
@@ -21,8 +22,7 @@ type Action interface {
 
 type Event interface{}
 
-// 次の問題を返す
-// 得点を加算する
+// Todo
 // 勝者を決める
 type Game struct {
 	Score         map[uuid.UUID]int
@@ -51,6 +51,7 @@ func NewGame() *Game {
 func (g *Game) Start() {
 	go g.watchPlayerCount()
 	go g.watchAction()
+	go g.watchWinner()
 }
 
 func (g *Game) watchPlayerCount() {
@@ -77,6 +78,26 @@ func (g *Game) watchAction() {
 		action.Perform(g)
 		g.Mu.Unlock()
 	}
+}
+
+func (g *Game) watchWinner() {
+	for {
+		g.Mu.RLock()
+		for k, v := range g.Score {
+			if v >= MaxScore {
+				g.EventChannel <- FinishEvent{
+					Winner: g.Name[k],
+				}
+				return
+			}
+		}
+		g.Mu.RUnlock()
+	}
+}
+
+type FinishEvent struct {
+	Event
+	Winner string
 }
 
 type StartEvent struct {

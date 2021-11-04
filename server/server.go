@@ -154,6 +154,30 @@ func (s *GameServer) watchEvent() {
 		case QuestionEvent:
 			event := event.(QuestionEvent)
 			s.handleQuestionEvent(event)
+		case FinishEvent:
+			event := event.(FinishEvent)
+			s.handleFinishEvent(event)
+		}
+	}
+}
+
+func (s *GameServer) handleFinishEvent(event FinishEvent) {
+	// ゲーム終了を通知する
+	for _, clt := range s.clients {
+		if clt.streamServer == nil {
+			continue
+		}
+
+		res := &proto.Response{
+			Action: &proto.Response_Finish{
+				Finish: &proto.Finish{
+					Winner: event.Winner,
+				},
+			},
+		}
+
+		if err := clt.streamServer.Send(res); err != nil {
+			log.Printf("failed to send finish event %v: %v", clt.name, err)
 		}
 	}
 }

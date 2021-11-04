@@ -13,7 +13,8 @@ import (
 )
 
 type GameClient struct {
-	Stream proto.Game_StreamClient
+	Stream        proto.Game_StreamClient
+	finishChannel chan struct{}
 }
 
 func NewGameClient() *GameClient {
@@ -58,6 +59,8 @@ func (c *GameClient) Start() {
 				c.handleQuestionResponse(res)
 			case *proto.Response_Start:
 				c.handleStartResponse(res)
+			case *proto.Response_Finish:
+				c.handleFinishResponse(res)
 			}
 		}
 	}()
@@ -82,6 +85,10 @@ func (c *GameClient) Start() {
 			return
 		}
 	}
+}
+
+func (c *GameClient) handleFinishResponse(resp *proto.Response) {
+	fmt.Printf("Finish! %v Win!!\n", resp.GetFinish().GetWinner())
 }
 
 func (c *GameClient) handleQuestionResponse(res *proto.Response) {

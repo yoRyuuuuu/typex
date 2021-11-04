@@ -35,10 +35,15 @@ message Request {
     }
 }
 
+message Finish {
+    string winner = 1;
+}
+
 message Response {
     oneof action {
         Update update = 1;
         Question question = 2;
         Start start = 3;
+        Finish finish = 4;
     }
 }
