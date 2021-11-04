@@ -15,6 +15,7 @@ import (
 type GameClient struct {
 	Stream        proto.Game_StreamClient
 	finishChannel chan struct{}
+	game          Game
 }
 
 func NewGameClient() *GameClient {
@@ -70,16 +71,17 @@ func (c *GameClient) Start() {
 	sc.Split(bufio.ScanLines)
 	for {
 		if sc.Scan() {
-			req := &proto.Request{
-				Action: &proto.Request_Answer{},
+			input := sc.Text()
+			if c.game.checkAnswer(input) {
+				req := &proto.Request{
+					Action: &proto.Request_Answer{},
+				}
+				err := c.Stream.Send(req)
+				if err != nil {
+					log.Printf("failed to send message %v", err)
+					return
+				}
 			}
-
-			err := c.Stream.Send(req)
-			if err != nil {
-				log.Printf("failed to send message %v", err)
-				return
-			}
-
 		} else {
 			log.Printf("input scanner failure %v", sc.Err())
 			return
@@ -92,6 +94,7 @@ func (c *GameClient) handleFinishResponse(resp *proto.Response) {
 }
 
 func (c *GameClient) handleQuestionResponse(res *proto.Response) {
+	c.game.problem = res.GetQuestion().GetText()
 	fmt.Printf("%v\n", res.GetQuestion().GetText())
 }
 
