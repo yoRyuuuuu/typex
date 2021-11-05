@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/yoRyuuuuu/typex/typex-server/client"
-	"github.com/yoRyuuuuu/typex/typex-server/proto"
+	"github.com/yoRyuuuuu/typex/client"
+	"github.com/yoRyuuuuu/typex/proto"
 	"google.golang.org/grpc"
 )
 

@@ -6,8 +6,8 @@ import (
 	"log"
 	"net"
 
-	"github.com/yoRyuuuuu/typex/typex-server/proto"
-	"github.com/yoRyuuuuu/typex/typex-server/server"
+	"github.com/yoRyuuuuu/typex/proto"
+	"github.com/yoRyuuuuu/typex/server"
 	"google.golang.org/grpc"
 )
 

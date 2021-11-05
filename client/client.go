@@ -8,7 +8,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/yoRyuuuuu/typex/typex-server/proto"
+	"github.com/yoRyuuuuu/typex/proto"
 	"google.golang.org/grpc/metadata"
 )
 

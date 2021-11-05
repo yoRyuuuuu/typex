@@ -1,4 +1,4 @@
-module github.com/yoRyuuuuu/typex/typex-server
+module github.com/yoRyuuuuu/typex
 
 go 1.17
 
