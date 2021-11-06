@@ -13,7 +13,7 @@ import (
 )
 
 var clientTimeout = 15.0
-var maxClients = 2
+var maxPlayer = 2
 
 type client struct {
 	streamServer proto.Game_StreamServer
@@ -113,7 +113,7 @@ func (s *GameServer) Stream(srv proto.Game_StreamServer) error {
 }
 
 func (s *GameServer) Connect(ctx context.Context, req *proto.ConnectRequest) (*proto.ConnectResponse, error) {
-	if len(s.clients) >= maxClients {
+	if len(s.clients) >= maxPlayer {
 		return nil, errors.New("The server is full")
 	}
 

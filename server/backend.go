@@ -9,7 +9,6 @@ import (
 	"github.com/google/uuid"
 )
 
-const MaxPlayer = 2
 const MaxScore = 10
 
 func init() {
@@ -55,7 +54,7 @@ func (g *Game) Start() {
 }
 
 func (g *Game) watchPlayerCount() {
-	for g.Player < MaxPlayer {
+	for g.Player < maxPlayer {
 		continue
 	}
 
