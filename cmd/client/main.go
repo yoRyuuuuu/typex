@@ -22,6 +22,8 @@ func main() {
 	}
 
 	game := client.NewGame()
+	view := client.NewView(game)
+
 	grpcClient := proto.NewGameClient(conn)
 
 	client := client.NewGameClient(game)
@@ -32,5 +34,5 @@ func main() {
 	}
 
 	client.Start()
-	game.Start()
+	view.Start()
 }

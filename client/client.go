@@ -9,15 +9,13 @@ import (
 )
 
 type GameClient struct {
-	Stream        proto.Game_StreamClient
-	finishChannel chan struct{}
-	game          *Game
+	Stream proto.Game_StreamClient
+	game   *Game
 }
 
 func NewGameClient(game *Game) *GameClient {
 	return &GameClient{
-		finishChannel: make(chan struct{}),
-		game:          game,
+		game: game,
 	}
 }
 
@@ -45,7 +43,6 @@ func (c *GameClient) Connect(grpcClient proto.GameClient, playerName string) err
 }
 
 func (c *GameClient) Start() {
-	// Handle stream messages.
 	go func() {
 		for {
 			res, err := c.Stream.Recv()

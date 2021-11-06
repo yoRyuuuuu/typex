@@ -1,9 +1,7 @@
 package client
 
 import (
-	"bufio"
 	"fmt"
-	"os"
 	"time"
 )
 
@@ -27,40 +25,27 @@ type StartEvent struct {
 
 type AnswerAction struct {
 	Action
+	text string
 }
 
 type Game struct {
-	problem string
+	word string
 	// GameClientから送信されるEvent
-	eventChannel chan Event
-	// ViewControllerから送信されるAction
+	eventChannel  chan Event
 	actionChannel chan Action
+	log           string
 }
 
 func NewGame() *Game {
 	game := &Game{
-		problem:       "",
+		word:          "",
 		eventChannel:  make(chan Event),
 		actionChannel: make(chan Action),
 	}
 
 	go game.watchEvent()
-	go game.watchAction()
 
 	return game
-}
-
-func (g *Game) Start() {
-	sc := bufio.NewScanner(os.Stdin)
-	sc.Split(bufio.ScanLines)
-	for {
-		if sc.Scan() {
-			input := sc.Text()
-			if g.checkAnswer(input) {
-				g.actionChannel <- AnswerAction{}
-			}
-		}
-	}
 }
 
 func (g *Game) watchEvent() {
@@ -81,36 +66,25 @@ func (g *Game) watchEvent() {
 	}
 }
 
-func (g *Game) watchAction() {
-	for {
-		action := <-g.actionChannel
-
-		switch action.(type) {
-
-		}
-	}
-}
-
 func (g *Game) handleStartEvent(event StartEvent) {
 	limit := 5 * time.Second
 	count := 0
 	output := []string{"4", "3", "2", "1", "start!!"}
 	for begin := time.Now(); time.Since(begin) < limit; {
-		fmt.Println(output[count])
+		g.log = output[count]
 		count += 1
 		time.Sleep(1 * time.Second)
 	}
 }
 
 func (g *Game) handleFinishEvent(event FinishEvent) {
-	fmt.Printf("Finish! %v Win!!\n", event.winner)
+	g.log = fmt.Sprintf("Finish! %v Win!!\n", event.winner)
 }
 
 func (g *Game) handleQuestionEvent(event QuestionEvent) {
-	g.problem = event.text
-	fmt.Printf("%v\n", g.problem)
+	g.word = event.text
 }
 
 func (g *Game) checkAnswer(input string) bool {
-	return input == g.problem
+	return input == g.word
 }
