@@ -21,12 +21,16 @@ func main() {
 		log.Fatalf("can Not connect with server %v", err)
 	}
 
+	game := client.NewGame()
 	grpcClient := proto.NewGameClient(conn)
-	client := client.NewGameClient()
+
+	client := client.NewGameClient(game)
+
 	err = client.Connect(grpcClient, *name)
 	if err != nil {
 		log.Fatalf("connect request failed %v", err)
 	}
 
 	client.Start()
+	game.Start()
 }

@@ -1,12 +1,8 @@
 package client
 
 import (
-	"bufio"
 	"context"
-	"fmt"
 	"log"
-	"os"
-	"time"
 
 	"github.com/yoRyuuuuu/typex/proto"
 	"google.golang.org/grpc/metadata"
@@ -15,11 +11,14 @@ import (
 type GameClient struct {
 	Stream        proto.Game_StreamClient
 	finishChannel chan struct{}
-	game          Game
+	game          *Game
 }
 
-func NewGameClient() *GameClient {
-	return &GameClient{}
+func NewGameClient(game *Game) *GameClient {
+	return &GameClient{
+		finishChannel: make(chan struct{}),
+		game:          game,
+	}
 }
 
 func (c *GameClient) Connect(grpcClient proto.GameClient, playerName string) error {
@@ -57,54 +56,34 @@ func (c *GameClient) Start() {
 
 			switch res.GetAction().(type) {
 			case *proto.Response_Question:
-				c.handleQuestionResponse(res)
+				c.game.eventChannel <- QuestionEvent{
+					text: res.GetQuestion().GetText(),
+				}
 			case *proto.Response_Start:
-				c.handleStartResponse(res)
+				c.game.eventChannel <- StartEvent{}
 			case *proto.Response_Finish:
-				c.handleFinishResponse(res)
+				c.game.eventChannel <- FinishEvent{
+					winner: res.GetFinish().GetWinner(),
+				}
 			}
 		}
 	}()
 
-	// Handle local game engine changes.
-	sc := bufio.NewScanner(os.Stdin)
-	sc.Split(bufio.ScanLines)
-	for {
-		if sc.Scan() {
-			input := sc.Text()
-			if c.game.checkAnswer(input) {
+	go func() {
+		for {
+			action := <-c.game.actionChannel
+
+			switch action.(type) {
+			case AnswerAction:
 				req := &proto.Request{
-					Action: &proto.Request_Answer{},
+					Action: &proto.Request_Answer{
+						Answer: &proto.Answer{},
+					},
 				}
-				err := c.Stream.Send(req)
-				if err != nil {
-					log.Printf("failed to send message %v", err)
-					return
+				if err := c.Stream.Send(req); err != nil {
+					log.Printf("%v", err)
 				}
 			}
-		} else {
-			log.Printf("input scanner failure %v", sc.Err())
-			return
 		}
-	}
-}
-
-func (c *GameClient) handleFinishResponse(resp *proto.Response) {
-	fmt.Printf("Finish! %v Win!!\n", resp.GetFinish().GetWinner())
-}
-
-func (c *GameClient) handleQuestionResponse(res *proto.Response) {
-	c.game.problem = res.GetQuestion().GetText()
-	fmt.Printf("%v\n", res.GetQuestion().GetText())
-}
-
-func (c *GameClient) handleStartResponse(res *proto.Response) {
-	limit := 5 * time.Second
-	count := 0
-	output := []string{"4", "3", "2", "1", "start!!"}
-	for begin := time.Now(); time.Since(begin) < limit; {
-		fmt.Println(output[count])
-		count += 1
-		time.Sleep(1 * time.Second)
-	}
+	}()
 }
