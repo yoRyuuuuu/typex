@@ -30,10 +30,12 @@ type AnswerAction struct {
 
 type JoinEvent struct {
 	Event
-	player string
+	id   string
+	name string
 }
 
 type Player struct {
+	id   string
 	name string
 }
 
@@ -44,7 +46,7 @@ type Game struct {
 	actionChannel chan Action
 	playerChannel chan Player
 	log           string
-	players       []Player
+	players       map[string]Player
 }
 
 func NewGame() *Game {
@@ -53,7 +55,7 @@ func NewGame() *Game {
 		eventChannel:  make(chan Event),
 		actionChannel: make(chan Action),
 		playerChannel: make(chan Player, 10),
-		players:       []Player{},
+		players:       map[string]Player{},
 	}
 
 	go game.watchEvent()
@@ -83,8 +85,11 @@ func (g *Game) watchEvent() {
 }
 
 func (g *Game) handleJoinEvent(event JoinEvent) {
-	player := Player{event.player}
-	g.players = append(g.players)
+	player := Player{
+		id:   event.id,
+		name: event.name,
+	}
+	g.players[event.id] = player
 	g.playerChannel <- player
 }
 

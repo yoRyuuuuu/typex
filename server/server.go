@@ -120,17 +120,24 @@ func (s *GameServer) Connect(ctx context.Context, req *proto.ConnectRequest) (*p
 	log.Printf("connect this server [Name: %v]", req.GetName())
 	s.mu.Lock()
 	token := uuid.New()
-	player := []string{}
+
+	players := []*proto.Player{}
 	for _, clt := range s.clients {
 		if clt.streamServer == nil {
 			continue
 		}
 
-		player = append(player, clt.name)
+		player := &proto.Player{
+			Id:   token.String(),
+			Name: req.GetName(),
+		}
+		players = append(players, player)
+
+		// 他のプレイヤーへ参加者情報を通知
 		resp := &proto.Response{
 			Action: &proto.Response_Join{
 				Join: &proto.Join{
-					Player: req.Name,
+					Player: player,
 				},
 			},
 		}
@@ -155,7 +162,7 @@ func (s *GameServer) Connect(ctx context.Context, req *proto.ConnectRequest) (*p
 
 	return &proto.ConnectResponse{
 		Token:  token.String(),
-		Player: player,
+		Player: players,
 	}, nil
 }
 

@@ -13,7 +13,7 @@ message ConnectRequest {
 
 message ConnectResponse {
     string token = 1;
-    repeated string player = 2;    
+    repeated Player player = 2;
 }
 
 message Answer {
@@ -33,12 +33,17 @@ message Request {
     }
 }
 
+message Player {
+    string id = 1;
+    string name = 2;
+}
+
 message Finish {
     string winner = 1;
 }
 
 message Join {
-    string player = 1;
+    Player player = 1;
 }
 
 message Response {

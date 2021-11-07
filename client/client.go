@@ -29,11 +29,16 @@ func (c *GameClient) Connect(grpcClient proto.GameClient, playerName string) err
 		return err
 	}
 
-	log.Printf("Token: %v\n", res.Token)
+	log.Printf("Token: %v\n", res.GetToken())
 
-	for _, name := range res.GetPlayer() {
-		c.game.players = append(c.game.players, Player{name})
-		c.game.playerChannel <- Player{name}
+	// Playerが参加したことを通知
+	for _, player := range res.GetPlayer() {
+		p := Player{
+			id:   player.Id,
+			name: player.Name,
+		}
+		c.game.players[player.Id] = p
+		c.game.playerChannel <- p
 	}
 
 	header := metadata.New(map[string]string{"authorization": res.Token})
@@ -70,7 +75,8 @@ func (c *GameClient) Start() {
 				}
 			case *proto.Response_Join:
 				c.game.eventChannel <- JoinEvent{
-					player: res.GetJoin().GetPlayer(),
+					id:   res.GetJoin().GetPlayer().Id,
+					name: res.GetJoin().GetPlayer().Name,
 				}
 			}
 		}
