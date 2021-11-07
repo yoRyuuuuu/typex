@@ -122,16 +122,22 @@ func (s *GameServer) Connect(ctx context.Context, req *proto.ConnectRequest) (*p
 	token := uuid.New()
 
 	players := []*proto.Player{}
+	player := &proto.Player{
+		Id:   token.String(),
+		Name: req.GetName(),
+	}
+
 	for _, clt := range s.clients {
 		if clt.streamServer == nil {
 			continue
 		}
 
-		player := &proto.Player{
-			Id:   token.String(),
-			Name: req.GetName(),
+		others := &proto.Player{
+			Id:   clt.id.String(),
+			Name: clt.name,
 		}
-		players = append(players, player)
+
+		players = append(players, others)
 
 		// 他のプレイヤーへ参加者情報を通知
 		resp := &proto.Response{
@@ -185,6 +191,30 @@ func (s *GameServer) watchEvent() {
 		case FinishEvent:
 			event := event.(FinishEvent)
 			s.handleFinishEvent(event)
+		case DamageEvent:
+			event := event.(DamageEvent)
+			s.handleDamageEvent(event)
+		}
+	}
+}
+
+func (s *GameServer) handleDamageEvent(event DamageEvent) {
+	for _, clt := range s.clients {
+		if clt.streamServer == nil {
+			continue
+		}
+
+		resp := &proto.Response{
+			Action: &proto.Response_Damage{
+				Damage: &proto.Damage{
+					Id:     event.id,
+					Damage: int64(event.damage),
+				},
+			},
+		}
+
+		if err := clt.streamServer.Send(resp); err != nil {
+			log.Printf("failed to send finish event %v: %v", clt.name, err)
 		}
 	}
 }

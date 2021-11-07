@@ -29,7 +29,7 @@ func (c *GameClient) Connect(grpcClient proto.GameClient, playerName string) err
 		return err
 	}
 
-	log.Printf("Token: %v\n", res.GetToken())
+	c.game.id = res.GetToken()
 
 	// Playerが参加したことを通知
 	for _, player := range res.GetPlayer() {
@@ -77,6 +77,11 @@ func (c *GameClient) Start() {
 				c.game.eventChannel <- JoinEvent{
 					id:   res.GetJoin().GetPlayer().Id,
 					name: res.GetJoin().GetPlayer().Name,
+				}
+			case *proto.Response_Damage:
+				c.game.eventChannel <- DamageEvent{
+					id:     res.GetDamage().GetId(),
+					damage: int(res.GetDamage().GetDamage()),
 				}
 			}
 		}

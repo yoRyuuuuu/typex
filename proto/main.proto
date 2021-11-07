@@ -46,11 +46,19 @@ message Join {
     Player player = 1;
 }
 
+message Damage {
+    // ダメージを受けるPlayerのId
+    string id = 1;
+    // ダメージ量
+    int64 damage = 2;
+}
+
 message Response {
     oneof action {
-        Question question = 2;
-        Start start = 3;
-        Finish finish = 4;
-        Join join = 5;
+        Question question = 1;
+        Start start = 2;
+        Finish finish = 3;
+        Join join = 4;
+        Damage damage = 5;
     }
 }

@@ -117,8 +117,18 @@ type JoinEvent struct {
 	name string
 }
 
+type DamageEvent struct {
+	Event
+	id     string
+	damage int
+}
+
 func (game *Game) AddScore(id uuid.UUID) {
 	game.Score[id]++
+	game.EventChannel <- DamageEvent{
+		id:     id.String(),
+		damage: game.Score[id],
+	}
 }
 
 func (action AnswerAction) Perform(game *Game) {

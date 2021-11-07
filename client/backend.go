@@ -2,6 +2,7 @@ package client
 
 import (
 	"fmt"
+	"sync"
 	"time"
 )
 
@@ -35,8 +36,15 @@ type JoinEvent struct {
 }
 
 type Player struct {
-	id   string
-	name string
+	id    string
+	name  string
+	score int
+}
+
+type DamageEvent struct {
+	Event
+	id     string
+	damage int
 }
 
 type Game struct {
@@ -45,8 +53,11 @@ type Game struct {
 	eventChannel  chan Event
 	actionChannel chan Action
 	playerChannel chan Player
+	damageChannel chan DamageEvent
 	log           string
 	players       map[string]Player
+	mutex         sync.Mutex
+	id            string
 }
 
 func NewGame() *Game {
@@ -55,7 +66,10 @@ func NewGame() *Game {
 		eventChannel:  make(chan Event),
 		actionChannel: make(chan Action),
 		playerChannel: make(chan Player, 10),
+		damageChannel: make(chan DamageEvent),
+		log:           "",
 		players:       map[string]Player{},
+		mutex:         sync.Mutex{},
 	}
 
 	go game.watchEvent()
@@ -80,8 +94,15 @@ func (g *Game) watchEvent() {
 		case JoinEvent:
 			event := event.(JoinEvent)
 			g.handleJoinEvent(event)
+		case DamageEvent:
+			event := event.(DamageEvent)
+			g.handleDamageEvent(event)
 		}
 	}
+}
+
+func (g *Game) handleDamageEvent(event DamageEvent) {
+	g.damageChannel <- event
 }
 
 func (g *Game) handleJoinEvent(event JoinEvent) {

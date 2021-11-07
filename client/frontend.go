@@ -1,6 +1,7 @@
 package client
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
@@ -86,14 +87,24 @@ func setupStatus(view *View) {
 }
 
 func setupPlayer(view *View) {
+	text := tview.NewTextView()
+	text.SetTitle(fmt.Sprintf("YOU")).
+		SetBorder(true)
+	text.SetText(fmt.Sprintf("score: 0"))
+	view.rightFlex.AddItem(text, 3, 0, false)
+	view.playerText[view.id] = text
+
 	callback := func() {
 		select {
 		case player := <-view.playerChannel:
 			text := tview.NewTextView()
 			text.SetTitle(player.name).
 				SetBorder(true)
+			text.SetText(fmt.Sprintf("score: 0"))
 			view.rightFlex.AddItem(text, 3, 0, false)
-			view.playerText[player.name] = text
+			view.playerText[player.id] = text
+		case damage := <-view.damageChannel:
+			view.playerText[damage.id].SetText(fmt.Sprintf("score: %v", damage.damage))
 		default:
 		}
 	}

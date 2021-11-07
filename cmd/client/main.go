@@ -22,17 +22,16 @@ func main() {
 	}
 
 	game := client.NewGame()
+	clt := client.NewGameClient(game)
+	grpcClient := proto.NewGameClient(conn)
+	err = clt.Connect(grpcClient, *name)
+
 	view := client.NewView(game)
 
-	grpcClient := proto.NewGameClient(conn)
-
-	client := client.NewGameClient(game)
-
-	err = client.Connect(grpcClient, *name)
 	if err != nil {
 		log.Fatalf("connect request failed %v", err)
 	}
 
-	client.Start()
+	clt.Start()
 	view.Start()
 }
