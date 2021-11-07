@@ -13,6 +13,7 @@ message ConnectRequest {
 
 message ConnectResponse {
     string token = 1;
+    repeated string player = 2;    
 }
 
 message Answer {
@@ -20,9 +21,6 @@ message Answer {
 
 message Question {
     string text = 1;
-}
-
-message Update {
 }
 
 message Start {
@@ -39,11 +37,15 @@ message Finish {
     string winner = 1;
 }
 
+message Join {
+    string player = 1;
+}
+
 message Response {
     oneof action {
-        Update update = 1;
         Question question = 2;
         Start start = 3;
         Finish finish = 4;
+        Join join = 5;
     }
 }

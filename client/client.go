@@ -30,6 +30,12 @@ func (c *GameClient) Connect(grpcClient proto.GameClient, playerName string) err
 	}
 
 	log.Printf("Token: %v\n", res.Token)
+
+	for _, name := range res.GetPlayer() {
+		c.game.players = append(c.game.players, Player{name})
+		c.game.playerChannel <- Player{name}
+	}
+
 	header := metadata.New(map[string]string{"authorization": res.Token})
 	ctx := metadata.NewOutgoingContext(context.Background(), header)
 	stream, err := grpcClient.Stream(ctx)
@@ -61,6 +67,10 @@ func (c *GameClient) Start() {
 			case *proto.Response_Finish:
 				c.game.eventChannel <- FinishEvent{
 					winner: res.GetFinish().GetWinner(),
+				}
+			case *proto.Response_Join:
+				c.game.eventChannel <- JoinEvent{
+					player: res.GetJoin().GetPlayer(),
 				}
 			}
 		}

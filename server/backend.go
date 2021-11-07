@@ -113,6 +113,10 @@ type AnswerAction struct {
 	ID uuid.UUID
 }
 
+type JoinEvent struct {
+	name string
+}
+
 func (game *Game) AddScore(id uuid.UUID) {
 	game.Score[id]++
 }

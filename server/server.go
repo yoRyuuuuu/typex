@@ -120,6 +120,26 @@ func (s *GameServer) Connect(ctx context.Context, req *proto.ConnectRequest) (*p
 	log.Printf("connect this server [Name: %v]", req.GetName())
 	s.mu.Lock()
 	token := uuid.New()
+	player := []string{}
+	for _, clt := range s.clients {
+		if clt.streamServer == nil {
+			continue
+		}
+
+		player = append(player, clt.name)
+		resp := &proto.Response{
+			Action: &proto.Response_Join{
+				Join: &proto.Join{
+					Player: req.Name,
+				},
+			},
+		}
+
+		if err := clt.streamServer.Send(resp); err != nil {
+			log.Printf("failed to send finish event %v: %v", clt.name, err)
+		}
+	}
+
 	s.clients[token] = &client{
 		id:          token,
 		done:        make(chan error),
@@ -134,7 +154,8 @@ func (s *GameServer) Connect(ctx context.Context, req *proto.ConnectRequest) (*p
 	s.mu.Unlock()
 
 	return &proto.ConnectResponse{
-		Token: token.String(),
+		Token:  token.String(),
+		Player: player,
 	}, nil
 }
 

@@ -13,6 +13,9 @@ const refreshInterval = 16 * time.Millisecond
 type View struct {
 	app           *tview.Application
 	flex          *tview.Flex
+	rightFlex     *tview.Flex
+	leftFlex      *tview.Flex
+	playerText    map[string]*tview.TextView
 	drawCallbacks []func()
 	*Game
 }
@@ -40,7 +43,7 @@ func setupWord(view *View) {
 
 	view.drawCallbacks = append(view.drawCallbacks, callback)
 
-	view.flex.AddItem(word, 3, 0, false)
+	view.leftFlex.AddItem(word, 3, 0, false)
 }
 
 func setupInput(view *View) {
@@ -66,7 +69,7 @@ func setupInput(view *View) {
 		return event
 	})
 
-	view.flex.AddItem(input, 3, 0, true)
+	view.leftFlex.AddItem(input, 3, 0, true)
 }
 
 func setupStatus(view *View) {
@@ -79,7 +82,23 @@ func setupStatus(view *View) {
 	}
 
 	view.drawCallbacks = append(view.drawCallbacks, callback)
-	view.flex.AddItem(status, 0, 1, false)
+	view.leftFlex.AddItem(status, 0, 1, false)
+}
+
+func setupPlayer(view *View) {
+	callback := func() {
+		select {
+		case player := <-view.playerChannel:
+			text := tview.NewTextView()
+			text.SetTitle(player.name).
+				SetBorder(true)
+			view.rightFlex.AddItem(text, 3, 0, false)
+			view.playerText[player.name] = text
+		default:
+		}
+	}
+
+	view.drawCallbacks = append(view.drawCallbacks, callback)
 }
 
 func NewView(game *Game) *View {
@@ -87,17 +106,25 @@ func NewView(game *Game) *View {
 	app := tview.NewApplication()
 
 	flex := tview.NewFlex()
+	flex.SetBackgroundColor(tcell.ColorBlack)
+	leftFlex := tview.NewFlex().SetDirection(tview.FlexRow)
+	flex.AddItem(leftFlex, 0, 2, true)
+	rightFlex := tview.NewFlex().SetDirection(tview.FlexRow)
+	flex.AddItem(rightFlex, 0, 1, false)
+
 	view := &View{
 		app:           app,
-		flex:          flex,
+		leftFlex:      leftFlex,
+		rightFlex:     rightFlex,
+		playerText:    map[string]*tview.TextView{},
 		drawCallbacks: []func(){},
 		Game:          game,
 	}
 
-	flex.SetDirection(tview.FlexRow)
 	setupWord(view)
 	setupInput(view)
 	setupStatus(view)
+	setupPlayer(view)
 
 	view.flex = flex
 	return view

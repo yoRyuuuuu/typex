@@ -28,12 +28,23 @@ type AnswerAction struct {
 	text string
 }
 
+type JoinEvent struct {
+	Event
+	player string
+}
+
+type Player struct {
+	name string
+}
+
 type Game struct {
 	word string
 	// GameClientから送信されるEvent
 	eventChannel  chan Event
 	actionChannel chan Action
+	playerChannel chan Player
 	log           string
+	players       []Player
 }
 
 func NewGame() *Game {
@@ -41,6 +52,8 @@ func NewGame() *Game {
 		word:          "",
 		eventChannel:  make(chan Event),
 		actionChannel: make(chan Action),
+		playerChannel: make(chan Player, 10),
+		players:       []Player{},
 	}
 
 	go game.watchEvent()
@@ -62,8 +75,17 @@ func (g *Game) watchEvent() {
 		case StartEvent:
 			event := event.(StartEvent)
 			g.handleStartEvent(event)
+		case JoinEvent:
+			event := event.(JoinEvent)
+			g.handleJoinEvent(event)
 		}
 	}
+}
+
+func (g *Game) handleJoinEvent(event JoinEvent) {
+	player := Player{event.player}
+	g.players = append(g.players)
+	g.playerChannel <- player
 }
 
 func (g *Game) handleStartEvent(event StartEvent) {
