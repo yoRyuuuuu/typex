@@ -38,7 +38,6 @@ type JoinEvent struct {
 type Player struct {
 	id    string
 	name  string
-	score int
 }
 
 type DamageEvent struct {
@@ -52,12 +51,11 @@ type Game struct {
 	// GameClientから送信されるEvent
 	eventChannel  chan Event
 	actionChannel chan Action
-	playerChannel chan Player
-	damageChannel chan DamageEvent
 	log           string
 	players       map[string]Player
 	mutex         sync.Mutex
 	id            string
+	score         map[string]int
 }
 
 func NewGame() *Game {
@@ -65,11 +63,11 @@ func NewGame() *Game {
 		word:          "",
 		eventChannel:  make(chan Event),
 		actionChannel: make(chan Action),
-		playerChannel: make(chan Player, 10),
-		damageChannel: make(chan DamageEvent),
 		log:           "",
 		players:       map[string]Player{},
 		mutex:         sync.Mutex{},
+		id:            "",
+		score:         map[string]int{},
 	}
 
 	go game.watchEvent()
@@ -80,29 +78,23 @@ func NewGame() *Game {
 func (g *Game) watchEvent() {
 	for {
 		event := <-g.eventChannel
-
-		switch event.(type) {
+		switch event := event.(type) {
 		case FinishEvent:
-			event := event.(FinishEvent)
 			g.handleFinishEvent(event)
 		case QuestionEvent:
-			event := event.(QuestionEvent)
 			g.handleQuestionEvent(event)
 		case StartEvent:
-			event := event.(StartEvent)
 			g.handleStartEvent(event)
 		case JoinEvent:
-			event := event.(JoinEvent)
 			g.handleJoinEvent(event)
 		case DamageEvent:
-			event := event.(DamageEvent)
 			g.handleDamageEvent(event)
 		}
 	}
 }
 
 func (g *Game) handleDamageEvent(event DamageEvent) {
-	g.damageChannel <- event
+	g.score[event.id] = event.damage
 }
 
 func (g *Game) handleJoinEvent(event JoinEvent) {
@@ -111,7 +103,6 @@ func (g *Game) handleJoinEvent(event JoinEvent) {
 		name: event.name,
 	}
 	g.players[event.id] = player
-	g.playerChannel <- player
 }
 
 func (g *Game) handleStartEvent(event StartEvent) {

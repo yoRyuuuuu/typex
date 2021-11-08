@@ -38,7 +38,6 @@ func (c *GameClient) Connect(grpcClient proto.GameClient, playerName string) err
 			name: player.Name,
 		}
 		c.game.players[player.Id] = p
-		c.game.playerChannel <- p
 	}
 
 	header := metadata.New(map[string]string{"authorization": res.Token})

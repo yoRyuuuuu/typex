@@ -13,9 +13,10 @@ const refreshInterval = 16 * time.Millisecond
 
 type View struct {
 	app           *tview.Application
-	mainView      *tview.Flex
+	logger        *tview.TextView
+	wordView      *tview.TextView
 	playerView    *tview.Flex
-	playerStatus  map[string]*tview.TextView
+	inputField    *tview.InputField
 	drawCallbacks []func()
 	*Game
 }
@@ -32,110 +33,107 @@ func (v *View) refresh() {
 }
 
 func (v *View) setupWordView() {
-	word := tview.NewTextView()
-	word.SetTitle("Word").
-		SetBorder(true)
-
+	v.wordView.SetTitle("Word").
+		SetBorder(true).
+		SetTitle(v.word)
 	callback := func() {
-		w := v.word
-		word.SetText(w)
+		v.wordView.SetText(v.word)
 	}
-
 	v.drawCallbacks = append(v.drawCallbacks, callback)
-
-	v.mainView.AddItem(word, 3, 0, false)
 }
 
 func (v *View) setupInputField() {
-	input := tview.NewInputField()
-	input.SetLabel("input: ")
-
-	input.SetTitle("Terminal").
+	v.inputField.SetLabel("input: ")
+	v.inputField.SetTitle("Terminal").
 		SetBorder(true)
 
-	input.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
+	v.inputField.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyEnter:
-			if v.checkAnswer(input.GetText()) {
+			if v.checkAnswer(v.inputField.GetText()) {
 				v.actionChannel <- AnswerAction{
-					text: input.GetText(),
+					text: v.inputField.GetText(),
 				}
-
-				input.SetText("")
+				v.inputField.SetText("")
 			}
-
 			return nil
 		}
 		return event
 	})
-
-	v.mainView.AddItem(input, 3, 0, true)
 }
 
 func (v *View) setupLogger() {
-	status := tview.NewTextView()
-	status.SetTitle("Log").
+	v.logger.SetTitle("Log")
+	v.drawCallbacks = append(v.drawCallbacks, v.drawLogger)
+}
+
+func (v *View) drawLogger() {
+	v.logger.Clear().
 		SetBorder(true)
-
-	callback := func() {
-		status.SetText(v.log)
-	}
-
-	v.drawCallbacks = append(v.drawCallbacks, callback)
-	v.mainView.AddItem(status, 0, 1, false)
+	v.logger.SetText(v.log)
 }
 
 func (v *View) setupPlayerView() {
-	text := tview.NewTextView()
-	text.SetTitle(fmt.Sprintf("YOU")).
-		SetBorder(true)
-	text.SetText(fmt.Sprintf("score: 0"))
-	v.playerView.AddItem(text, 3, 0, false)
-	v.playerStatus[v.id] = text
 	v.drawCallbacks = append(v.drawCallbacks, v.drawPlayerView)
 }
 
 func (v *View) drawPlayerView() {
-	select {
-	case player := <-v.playerChannel:
+	// 描画をリセット
+	v.playerView.Clear()
+	// 自分のスコアを描画
+	mine := tview.NewTextView()
+	mine.SetTitle("YOU").
+		SetBorder(true)
+	mine.SetText(fmt.Sprintf("score: %v", v.score[v.id]))
+	v.playerView.AddItem(mine, 3, 0, false)
+	for _, player := range v.players {
+		// 他プレイヤーのスコアを描画
 		text := tview.NewTextView()
 		text.SetTitle(player.name).
 			SetBorder(true)
-		text.SetText(fmt.Sprintf("score: 0"))
+		text.SetText(fmt.Sprintf("score: %v", v.score[player.id]))
 		v.playerView.AddItem(text, 3, 0, false)
-		v.playerStatus[player.id] = text
-	case damage := <-v.damageChannel:
-		v.playerStatus[damage.id].SetText(fmt.Sprintf("score: %v", damage.damage))
-	default:
 	}
-
-	return
 }
 
 func NewView(game *Game) *View {
 	runewidth.DefaultCondition = &runewidth.Condition{EastAsianWidth: false}
-	app := tview.NewApplication()
 
-	flex := tview.NewFlex()
-	mainView := tview.NewFlex().SetDirection(tview.FlexRow)
-	flex.AddItem(mainView, 0, 2, true)
+	app := tview.NewApplication()
+	root := tview.NewFlex()
+	flex := tview.NewFlex().SetDirection(tview.FlexRow)
+
+	// 単語のViewを配置
+	wordView := tview.NewTextView()
+	flex.AddItem(wordView, 3, 0, false)
+	// inpuFieldを配置
+	inputField := tview.NewInputField()
+	flex.AddItem(inputField, 3, 0, true)
+	// loggerを配置
+	logger := tview.NewTextView()
+	flex.AddItem(logger, 0, 1, false)
+
+	root.AddItem(flex, 0, 2, true)
+
 	playerView := tview.NewFlex().SetDirection(tview.FlexRow)
-	flex.AddItem(playerView, 0, 1, false)
+	root.AddItem(playerView, 0, 1, false)
 	view := &View{
 		app:           app,
-		mainView:      mainView,
+		wordView:      wordView,
+		logger:        logger,
+		inputField:    inputField,
 		playerView:    playerView,
-		playerStatus:  map[string]*tview.TextView{},
 		drawCallbacks: []func(){},
 		Game:          game,
 	}
 
+	// UIのセットアップ
 	view.setupWordView()
 	view.setupInputField()
 	view.setupLogger()
 	view.setupPlayerView()
 
-	view.app.SetRoot(flex, true)
+	view.app.SetRoot(root, true)
 	return view
 }
 

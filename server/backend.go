@@ -21,8 +21,6 @@ type Action interface {
 
 type Event interface{}
 
-// Todo
-// 勝者を決める
 type Game struct {
 	Score         map[uuid.UUID]int
 	Problems      map[uuid.UUID]Problems
@@ -111,10 +109,6 @@ type QuestionEvent struct {
 
 type AnswerAction struct {
 	ID uuid.UUID
-}
-
-type JoinEvent struct {
-	name string
 }
 
 type DamageEvent struct {

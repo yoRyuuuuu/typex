@@ -48,7 +48,7 @@ func NewGameServer(game *Game) *GameServer {
 }
 
 func (s *GameServer) getClientFromContext(ctx context.Context) (*client, error) {
-	headers, ok := metadata.FromIncomingContext(ctx)
+	headers, _ := metadata.FromIncomingContext(ctx)
 	tokenRaw := headers["authorization"]
 	if len(tokenRaw) == 0 {
 		return nil, errors.New("no token provided")
@@ -182,17 +182,14 @@ func (s *GameServer) handleAnswerRequest(req *proto.Request, clt *client) {
 func (s *GameServer) watchEvent() {
 	for {
 		event := <-s.game.EventChannel
-		switch event.(type) {
+		switch event := event.(type) {
 		case StartEvent:
 			s.handleStartEvent()
 		case QuestionEvent:
-			event := event.(QuestionEvent)
 			s.handleQuestionEvent(event)
 		case FinishEvent:
-			event := event.(FinishEvent)
 			s.handleFinishEvent(event)
 		case DamageEvent:
-			event := event.(DamageEvent)
 			s.handleDamageEvent(event)
 		}
 	}
@@ -286,7 +283,7 @@ func (s *GameServer) watchTimeout() {
 	timeoutTicker := time.NewTicker(1 * time.Minute)
 	for {
 		for _, client := range s.clients {
-			if time.Now().Sub(client.lastMessage).Minutes() > clientTimeout {
+			if time.Since(client.lastMessage).Minutes() > clientTimeout {
 				client.done <- errors.New("you have been timed out")
 				return
 			}
