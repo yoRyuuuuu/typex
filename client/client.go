@@ -77,10 +77,10 @@ func (c *GameClient) Start() {
 					id:   res.GetJoin().GetPlayer().Id,
 					name: res.GetJoin().GetPlayer().Name,
 				}
-			case *proto.Response_Damage:
-				c.game.eventChannel <- DamageEvent{
-					id:     res.GetDamage().GetId(),
-					damage: int(res.GetDamage().GetDamage()),
+			case *proto.Response_Attack:
+				c.game.eventChannel <- AttackEvent{
+					id:     res.GetAttack().GetId(),
+					health: int(res.GetAttack().GetHealth()),
 				}
 			}
 		}

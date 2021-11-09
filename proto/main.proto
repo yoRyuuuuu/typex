@@ -46,11 +46,11 @@ message Join {
     Player player = 1;
 }
 
-message Damage {
-    // ダメージを受けるPlayerのId
+message Attack {
+    // 攻撃を受けるPlayerのID
     string id = 1;
-    // ダメージ量
-    int64 damage = 2;
+    // 体力の数値
+    int64 health = 2;
 }
 
 message Response {
@@ -59,6 +59,6 @@ message Response {
         Start start = 2;
         Finish finish = 3;
         Join join = 4;
-        Damage damage = 5;
+        Attack attack = 5;
     }
 }

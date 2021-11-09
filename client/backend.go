@@ -36,14 +36,16 @@ type JoinEvent struct {
 }
 
 type Player struct {
-	id    string
-	name  string
+	id   string
+	name string
 }
 
-type DamageEvent struct {
+type AttackEvent struct {
 	Event
-	id     string
-	damage int
+	// 攻撃を受けるPlayerのID
+	id string
+	// 体力の数値
+	health int
 }
 
 type Game struct {
@@ -55,7 +57,7 @@ type Game struct {
 	players       map[string]Player
 	mutex         sync.Mutex
 	id            string
-	score         map[string]int
+	health        map[string]int
 }
 
 func NewGame() *Game {
@@ -67,7 +69,7 @@ func NewGame() *Game {
 		players:       map[string]Player{},
 		mutex:         sync.Mutex{},
 		id:            "",
-		score:         map[string]int{},
+		health:        map[string]int{},
 	}
 
 	go game.watchEvent()
@@ -87,14 +89,14 @@ func (g *Game) watchEvent() {
 			g.handleStartEvent(event)
 		case JoinEvent:
 			g.handleJoinEvent(event)
-		case DamageEvent:
-			g.handleDamageEvent(event)
+		case AttackEvent:
+			g.handleAttackEvent(event)
 		}
 	}
 }
 
-func (g *Game) handleDamageEvent(event DamageEvent) {
-	g.score[event.id] = event.damage
+func (g *Game) handleAttackEvent(event AttackEvent) {
+	g.health[event.id] = event.health
 }
 
 func (g *Game) handleJoinEvent(event JoinEvent) {

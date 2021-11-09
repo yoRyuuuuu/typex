@@ -33,7 +33,7 @@ type GameServer struct {
 func (s *GameServer) removeClient(id uuid.UUID) {
 	s.mu.Lock()
 	delete(s.clients, id)
-	s.game.Player--
+	s.game.PlayerCount--
 	s.mu.Unlock()
 }
 
@@ -78,7 +78,6 @@ func (s *GameServer) Stream(srv proto.Game_StreamServer) error {
 	clt.streamServer = srv
 	log.Println("start new server")
 
-	// Wait for stream requests.
 	go func() {
 		for {
 			req, err := srv.Recv()
@@ -121,6 +120,7 @@ func (s *GameServer) Connect(ctx context.Context, req *proto.ConnectRequest) (*p
 	s.mu.Lock()
 	token := uuid.New()
 
+	s.game.PlayerID = append(s.game.PlayerID, token)
 	players := []*proto.Player{}
 	player := &proto.Player{
 		Id:   token.String(),
@@ -160,10 +160,11 @@ func (s *GameServer) Connect(ctx context.Context, req *proto.ConnectRequest) (*p
 		name:        req.GetName(),
 	}
 
+	s.game.Health[token] = InitialHealth
 	s.game.Problems[token] = NewStubProblems()
 	s.game.Name[token] = req.GetName()
-	s.game.Player++
-	log.Printf("[Player: %v]", s.game.Player)
+	s.game.PlayerCount++
+	log.Printf("[Player: %v]", s.game.PlayerCount)
 	s.mu.Unlock()
 
 	return &proto.ConnectResponse{
@@ -189,23 +190,23 @@ func (s *GameServer) watchEvent() {
 			s.handleQuestionEvent(event)
 		case FinishEvent:
 			s.handleFinishEvent(event)
-		case DamageEvent:
-			s.handleDamageEvent(event)
+		case AttackEvent:
+			s.handleAttackEvent(event)
 		}
 	}
 }
 
-func (s *GameServer) handleDamageEvent(event DamageEvent) {
+func (s *GameServer) handleAttackEvent(event AttackEvent) {
 	for _, clt := range s.clients {
 		if clt.streamServer == nil {
 			continue
 		}
 
 		resp := &proto.Response{
-			Action: &proto.Response_Damage{
-				Damage: &proto.Damage{
+			Action: &proto.Response_Attack{
+				Attack: &proto.Attack{
 					Id:     event.id,
-					Damage: int64(event.damage),
+					Health: int64(event.health),
 				},
 			},
 		}

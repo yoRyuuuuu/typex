@@ -84,14 +84,14 @@ func (v *View) drawPlayerView() {
 	mine := tview.NewTextView()
 	mine.SetTitle("YOU").
 		SetBorder(true)
-	mine.SetText(fmt.Sprintf("score: %v", v.score[v.id]))
+	mine.SetText(fmt.Sprintf("score: %v", v.health[v.id]))
 	v.playerView.AddItem(mine, 3, 0, false)
 	for _, player := range v.players {
 		// 他プレイヤーのスコアを描画
 		text := tview.NewTextView()
 		text.SetTitle(player.name).
 			SetBorder(true)
-		text.SetText(fmt.Sprintf("score: %v", v.score[player.id]))
+		text.SetText(fmt.Sprintf("score: %v", v.health[player.id]))
 		v.playerView.AddItem(text, 3, 0, false)
 	}
 }

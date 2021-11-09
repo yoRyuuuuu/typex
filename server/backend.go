@@ -10,6 +10,7 @@ import (
 )
 
 const MaxScore = 10
+const InitialHealth = 15
 
 func init() {
 	rand.Seed(time.Now().UnixNano())
@@ -22,24 +23,28 @@ type Action interface {
 type Event interface{}
 
 type Game struct {
-	Score         map[uuid.UUID]int
+	Health        map[uuid.UUID]int
 	Problems      map[uuid.UUID]Problems
 	Name          map[uuid.UUID]string
+	PlayerID      []uuid.UUID
 	ActionChannel chan Action
 	EventChannel  chan Event
 	Mu            sync.RWMutex
 	WaitForRound  bool
-	Player        int
+	PlayerCount   int
 }
 
 func NewGame() *Game {
 	game := &Game{
-		Score:         make(map[uuid.UUID]int),
+		Health:        make(map[uuid.UUID]int),
 		Problems:      make(map[uuid.UUID]Problems),
+		Name:          make(map[uuid.UUID]string),
+		PlayerID:      []uuid.UUID{},
 		ActionChannel: make(chan Action, 1),
 		EventChannel:  make(chan Event, 1),
-		Name:          make(map[uuid.UUID]string),
+		Mu:            sync.RWMutex{},
 		WaitForRound:  true,
+		PlayerCount:   0,
 	}
 
 	return game
@@ -52,7 +57,7 @@ func (g *Game) Start() {
 }
 
 func (g *Game) watchPlayerCount() {
-	for g.Player < maxPlayer {
+	for g.PlayerCount < maxPlayer {
 		continue
 	}
 
@@ -79,15 +84,29 @@ func (g *Game) watchAction() {
 
 func (g *Game) watchWinner() {
 	for {
+		if g.WaitForRound {
+			continue
+		}
+
 		g.Mu.RLock()
-		for k, v := range g.Score {
-			if v >= MaxScore {
-				g.EventChannel <- FinishEvent{
-					Winner: g.Name[k],
-				}
-				return
+		// 体力が1以上のプレイヤーが1人のとき終了
+		var count = 0
+		for _, v := range g.Health {
+			if v >= 1 {
+				count += 1
 			}
 		}
+
+		if count == 1 {
+			for k, v := range g.Health {
+				if v >= 1 {
+					g.EventChannel <- FinishEvent{
+						Winner: g.Name[k],
+					}
+				}
+			}
+		}
+
 		g.Mu.RUnlock()
 	}
 }
@@ -111,24 +130,25 @@ type AnswerAction struct {
 	ID uuid.UUID
 }
 
-type DamageEvent struct {
+type AttackEvent struct {
 	Event
 	id     string
-	damage int
+	health int
 }
 
-func (game *Game) AddScore(id uuid.UUID) {
-	game.Score[id]++
-	game.EventChannel <- DamageEvent{
+func (game *Game) AttackPlayer(id uuid.UUID) {
+	game.Health[id]--
+	game.EventChannel <- AttackEvent{
 		id:     id.String(),
-		damage: game.Score[id],
+		health: game.Health[id],
 	}
 }
 
 func (action AnswerAction) Perform(game *Game) {
-	game.AddScore(action.ID)
+	idx := rand.Intn(len(game.PlayerID))
+	game.AttackPlayer(game.PlayerID[idx])
 	name := game.Name[action.ID]
-	log.Printf("%v's score is %v", name, game.Score[action.ID])
+	log.Printf("%v's health is %v", name, game.Health[action.ID])
 	game.Question(action.ID)
 }
 
