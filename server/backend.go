@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	. "github.com/yoRyuuuuu/typex/common"
 )
 
 const MaxScore = 10
@@ -20,7 +21,9 @@ type Action interface {
 	Perform(game *Game)
 }
 
-type Event interface{}
+type AnswerAction struct {
+	ID uuid.UUID
+}
 
 type Game struct {
 	Health        map[uuid.UUID]int
@@ -111,36 +114,11 @@ func (g *Game) watchWinner() {
 	}
 }
 
-type FinishEvent struct {
-	Event
-	Winner string
-}
-
-type StartEvent struct {
-	Event
-}
-
-type QuestionEvent struct {
-	Event
-	ID   uuid.UUID
-	Text string
-}
-
-type AnswerAction struct {
-	ID uuid.UUID
-}
-
-type AttackEvent struct {
-	Event
-	id     string
-	health int
-}
-
 func (game *Game) AttackPlayer(id uuid.UUID) {
 	game.Health[id]--
 	game.EventChannel <- AttackEvent{
-		id:     id.String(),
-		health: game.Health[id],
+		ID:     id.String(),
+		Health: game.Health[id],
 	}
 }
 

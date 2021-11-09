@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/google/uuid"
+	. "github.com/yoRyuuuuu/typex/common"
 	"github.com/yoRyuuuuu/typex/proto"
 	"google.golang.org/grpc/metadata"
 )
@@ -205,8 +206,8 @@ func (s *GameServer) handleAttackEvent(event AttackEvent) {
 		resp := &proto.Response{
 			Action: &proto.Response_Attack{
 				Attack: &proto.Attack{
-					Id:     event.id,
-					Health: int64(event.health),
+					Id:     event.ID,
+					Health: int64(event.Health),
 				},
 			},
 		}

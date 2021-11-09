@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 
+	. "github.com/yoRyuuuuu/typex/common"
 	"github.com/yoRyuuuuu/typex/proto"
 	"google.golang.org/grpc/metadata"
 )
@@ -64,23 +65,23 @@ func (c *GameClient) Start() {
 			switch res.GetAction().(type) {
 			case *proto.Response_Question:
 				c.game.eventChannel <- QuestionEvent{
-					text: res.GetQuestion().GetText(),
+					Text: res.GetQuestion().GetText(),
 				}
 			case *proto.Response_Start:
 				c.game.eventChannel <- StartEvent{}
 			case *proto.Response_Finish:
 				c.game.eventChannel <- FinishEvent{
-					winner: res.GetFinish().GetWinner(),
+					Winner: res.GetFinish().GetWinner(),
 				}
 			case *proto.Response_Join:
 				c.game.eventChannel <- JoinEvent{
-					id:   res.GetJoin().GetPlayer().Id,
-					name: res.GetJoin().GetPlayer().Name,
+					ID:   res.GetJoin().GetPlayer().Id,
+					Name: res.GetJoin().GetPlayer().Name,
 				}
 			case *proto.Response_Attack:
 				c.game.eventChannel <- AttackEvent{
-					id:     res.GetAttack().GetId(),
-					health: int(res.GetAttack().GetHealth()),
+					ID:     res.GetAttack().GetId(),
+					Health: int(res.GetAttack().GetHealth()),
 				}
 			}
 		}

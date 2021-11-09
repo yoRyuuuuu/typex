@@ -4,49 +4,23 @@ import (
 	"fmt"
 	"sync"
 	"time"
+
+	. "github.com/yoRyuuuuu/typex/common"
 )
-
-type Event interface{}
-
-type Action interface{}
-
-type FinishEvent struct {
-	Event
-	winner string
-}
-
-type QuestionEvent struct {
-	Event
-	text string
-}
-
-type StartEvent struct {
-	Event
-}
-
-type AnswerAction struct {
-	Action
-	text string
-}
-
-type JoinEvent struct {
-	Event
-	id   string
-	name string
-}
 
 type Player struct {
 	id   string
 	name string
 }
 
-type AttackEvent struct {
-	Event
-	// 攻撃を受けるPlayerのID
-	id string
-	// 体力の数値
-	health int
+type Action interface{}
+
+type AnswerAction struct {
+	Action
+	text string
 }
+
+
 
 type Game struct {
 	word string
@@ -96,15 +70,15 @@ func (g *Game) watchEvent() {
 }
 
 func (g *Game) handleAttackEvent(event AttackEvent) {
-	g.health[event.id] = event.health
+	g.health[event.ID] = event.Health
 }
 
 func (g *Game) handleJoinEvent(event JoinEvent) {
 	player := Player{
-		id:   event.id,
-		name: event.name,
+		id:   event.ID,
+		name: event.Name,
 	}
-	g.players[event.id] = player
+	g.players[event.ID] = player
 }
 
 func (g *Game) handleStartEvent(event StartEvent) {
@@ -119,11 +93,11 @@ func (g *Game) handleStartEvent(event StartEvent) {
 }
 
 func (g *Game) handleFinishEvent(event FinishEvent) {
-	g.log = fmt.Sprintf("Finish! %v Win!!\n", event.winner)
+	g.log = fmt.Sprintf("Finish! %v Win!!\n", event.Winner)
 }
 
 func (g *Game) handleQuestionEvent(event QuestionEvent) {
-	g.word = event.text
+	g.word = event.Text
 }
 
 func (g *Game) checkAnswer(input string) bool {
