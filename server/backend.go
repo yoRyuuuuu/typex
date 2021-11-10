@@ -27,7 +27,7 @@ type AnswerAction struct {
 
 type Game struct {
 	Health        map[uuid.UUID]int
-	Problems      map[uuid.UUID]Problems
+	Problem       map[uuid.UUID]*Dataset
 	Name          map[uuid.UUID]string
 	PlayerID      []uuid.UUID
 	ActionChannel chan Action
@@ -40,7 +40,7 @@ type Game struct {
 func NewGame() *Game {
 	game := &Game{
 		Health:        make(map[uuid.UUID]int),
-		Problems:      make(map[uuid.UUID]Problems),
+		Problem:       make(map[uuid.UUID]*Dataset),
 		Name:          make(map[uuid.UUID]string),
 		PlayerID:      []uuid.UUID{},
 		ActionChannel: make(chan Action, 1),
@@ -133,9 +133,8 @@ func (action AnswerAction) Perform(game *Game) {
 }
 
 func (g *Game) Question(id uuid.UUID) {
-	problems := g.Problems[id]
 	g.EventChannel <- QuestionEvent{
 		ID:   id,
-		Text: problems.Next(),
+		Text: g.Problem[id].Next(),
 	}
 }

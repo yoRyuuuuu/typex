@@ -162,7 +162,7 @@ func (s *GameServer) Connect(ctx context.Context, req *proto.ConnectRequest) (*p
 	}
 
 	s.game.Health[token] = InitialHealth
-	s.game.Problems[token] = NewStubProblems()
+	s.game.Problem[token] = NewDataset()
 	s.game.Name[token] = req.GetName()
 	s.game.PlayerCount++
 	log.Printf("[Player: %v]", s.game.PlayerCount)
