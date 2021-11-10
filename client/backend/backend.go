@@ -17,14 +17,15 @@ type Action interface{}
 
 type Answer struct {
 	Action
-	text string
+	Text string
 }
 
 type Game struct {
-	// GameClientから送信されるEvent
 	Players       map[string]Player
 	Health        map[string]int
-	EventChannel  chan Event
+	PlayerID      []string
+	EventReceiver chan Event // GameClientから送信されるEventChannel
+	EventSender   chan Event // GameClientへ送信するEventChannel
 	ActionChannel chan Action
 	Problem       string
 	Log           string
@@ -36,7 +37,9 @@ func NewGame() *Game {
 	game := &Game{
 		Players:       map[string]Player{},
 		Health:        map[string]int{},
-		EventChannel:  make(chan Event),
+		PlayerID:      []string{},
+		EventReceiver: make(chan Event),
+		EventSender:   make(chan Event),
 		ActionChannel: make(chan Action),
 		Problem:       "",
 		Log:           "",
@@ -45,13 +48,14 @@ func NewGame() *Game {
 	}
 
 	go game.watchEvent()
+	go game.watchAction()
 
 	return game
 }
 
 func (g *Game) watchEvent() {
 	for {
-		event := <-g.EventChannel
+		event := <-g.EventReceiver
 		switch event := event.(type) {
 		case FinishEvent:
 			g.handleFinishEvent(event)
@@ -63,6 +67,19 @@ func (g *Game) watchEvent() {
 			g.handleJoinEvent(event)
 		case AttackEvent:
 			g.handleAttackEvent(event)
+		}
+	}
+}
+
+func (g *Game) watchAction() {
+	for {
+		action := <-g.ActionChannel
+
+		switch action := action.(type) {
+		case Answer:
+			if g.CheckAnswer(action.Text) {
+				g.EventSender <- AttackEvent{}
+			}
 		}
 	}
 }

@@ -51,12 +51,12 @@ func (v *View) setupInputField() {
 	v.inputField.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyEnter:
-			if v.CheckAnswer(v.inputField.GetText()) {
-				v.ActionChannel <- backend.Answer{
-					Action: nil,
-				}
-				v.inputField.SetText("")
+			input := v.inputField.GetText()
+			v.ActionChannel <- backend.Answer{
+				Action: nil,
+				Text:   input,
 			}
+			v.inputField.SetText("")
 			return nil
 		}
 		return event

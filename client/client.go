@@ -5,6 +5,7 @@ import (
 	"log"
 
 	"github.com/yoRyuuuuu/typex/client/backend"
+	"github.com/yoRyuuuuu/typex/common"
 	. "github.com/yoRyuuuuu/typex/common"
 	"github.com/yoRyuuuuu/typex/proto"
 	"google.golang.org/grpc/metadata"
@@ -40,6 +41,7 @@ func (c *GameClient) Connect(grpcClient proto.GameClient, playerName string) err
 			Name: player.Name,
 		}
 		c.game.Players[player.Id] = p
+		c.game.PlayerID = append(c.game.PlayerID, player.Id)
 	}
 
 	header := metadata.New(map[string]string{"authorization": res.Token})
@@ -65,22 +67,22 @@ func (c *GameClient) Start() {
 
 			switch res.GetAction().(type) {
 			case *proto.Response_Question:
-				c.game.EventChannel <- QuestionEvent{
+				c.game.EventReceiver <- QuestionEvent{
 					Text: res.GetQuestion().GetText(),
 				}
 			case *proto.Response_Start:
-				c.game.EventChannel <- StartEvent{}
+				c.game.EventReceiver <- StartEvent{}
 			case *proto.Response_Finish:
-				c.game.EventChannel <- FinishEvent{
+				c.game.EventReceiver <- FinishEvent{
 					Winner: res.GetFinish().GetWinner(),
 				}
 			case *proto.Response_Join:
-				c.game.EventChannel <- JoinEvent{
+				c.game.EventReceiver <- JoinEvent{
 					ID:   res.GetJoin().GetPlayer().Id,
 					Name: res.GetJoin().GetPlayer().Name,
 				}
 			case *proto.Response_Attack:
-				c.game.EventChannel <- AttackEvent{
+				c.game.EventReceiver <- AttackEvent{
 					ID:     res.GetAttack().GetId(),
 					Health: int(res.GetAttack().GetHealth()),
 				}
@@ -90,15 +92,16 @@ func (c *GameClient) Start() {
 
 	go func() {
 		for {
-			action := <-c.game.ActionChannel
+			event := <-c.game.EventSender
 
-			switch action.(type) {
-			case backend.Answer:
+			switch event.(type) {
+			case common.AttackEvent:
 				req := &proto.Request{
 					Action: &proto.Request_Answer{
 						Answer: &proto.Answer{},
 					},
 				}
+
 				if err := c.Stream.Send(req); err != nil {
 					log.Printf("%v", err)
 				}
