@@ -4,6 +4,7 @@ import (
 	"context"
 	"log"
 
+	"github.com/yoRyuuuuu/typex/client/backend"
 	. "github.com/yoRyuuuuu/typex/common"
 	"github.com/yoRyuuuuu/typex/proto"
 	"google.golang.org/grpc/metadata"
@@ -11,10 +12,10 @@ import (
 
 type GameClient struct {
 	Stream proto.Game_StreamClient
-	game   *Game
+	game   *backend.Game
 }
 
-func NewGameClient(game *Game) *GameClient {
+func NewGameClient(game *backend.Game) *GameClient {
 	return &GameClient{
 		game: game,
 	}
@@ -30,15 +31,15 @@ func (c *GameClient) Connect(grpcClient proto.GameClient, playerName string) err
 		return err
 	}
 
-	c.game.id = res.GetToken()
+	c.game.ID = res.GetToken()
 
 	// Playerが参加したことを通知
 	for _, player := range res.GetPlayer() {
-		p := Player{
-			id:   player.Id,
-			name: player.Name,
+		p := backend.Player{
+			ID:   player.Id,
+			Name: player.Name,
 		}
-		c.game.players[player.Id] = p
+		c.game.Players[player.Id] = p
 	}
 
 	header := metadata.New(map[string]string{"authorization": res.Token})
@@ -64,22 +65,22 @@ func (c *GameClient) Start() {
 
 			switch res.GetAction().(type) {
 			case *proto.Response_Question:
-				c.game.eventChannel <- QuestionEvent{
+				c.game.EventChannel <- QuestionEvent{
 					Text: res.GetQuestion().GetText(),
 				}
 			case *proto.Response_Start:
-				c.game.eventChannel <- StartEvent{}
+				c.game.EventChannel <- StartEvent{}
 			case *proto.Response_Finish:
-				c.game.eventChannel <- FinishEvent{
+				c.game.EventChannel <- FinishEvent{
 					Winner: res.GetFinish().GetWinner(),
 				}
 			case *proto.Response_Join:
-				c.game.eventChannel <- JoinEvent{
+				c.game.EventChannel <- JoinEvent{
 					ID:   res.GetJoin().GetPlayer().Id,
 					Name: res.GetJoin().GetPlayer().Name,
 				}
 			case *proto.Response_Attack:
-				c.game.eventChannel <- AttackEvent{
+				c.game.EventChannel <- AttackEvent{
 					ID:     res.GetAttack().GetId(),
 					Health: int(res.GetAttack().GetHealth()),
 				}
@@ -89,10 +90,10 @@ func (c *GameClient) Start() {
 
 	go func() {
 		for {
-			action := <-c.game.actionChannel
+			action := <-c.game.ActionChannel
 
 			switch action.(type) {
-			case AnswerAction:
+			case backend.Answer:
 				req := &proto.Request{
 					Action: &proto.Request_Answer{
 						Answer: &proto.Answer{},

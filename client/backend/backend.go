@@ -1,4 +1,4 @@
-package client
+package backend
 
 import (
 	"fmt"
@@ -9,39 +9,39 @@ import (
 )
 
 type Player struct {
-	id   string
-	name string
+	ID   string
+	Name string
 }
 
 type Action interface{}
 
-type AnswerAction struct {
+type Answer struct {
 	Action
 	text string
 }
 
 type Game struct {
 	// GameClientから送信されるEvent
-	players       map[string]Player
-	health        map[string]int
-	eventChannel  chan Event
-	actionChannel chan Action
-	problem          string
-	log           string
-	id            string
-	mutex         sync.Mutex
+	Players       map[string]Player
+	Health        map[string]int
+	EventChannel  chan Event
+	ActionChannel chan Action
+	Problem       string
+	Log           string
+	ID            string
+	Mutex         sync.Mutex
 }
 
 func NewGame() *Game {
 	game := &Game{
-		players:       map[string]Player{},
-		health:        map[string]int{},
-		eventChannel:  make(chan Event),
-		actionChannel: make(chan Action),
-		problem:          "",
-		log:           "",
-		id:            "",
-		mutex:         sync.Mutex{},
+		Players:       map[string]Player{},
+		Health:        map[string]int{},
+		EventChannel:  make(chan Event),
+		ActionChannel: make(chan Action),
+		Problem:       "",
+		Log:           "",
+		ID:            "",
+		Mutex:         sync.Mutex{},
 	}
 
 	go game.watchEvent()
@@ -51,7 +51,7 @@ func NewGame() *Game {
 
 func (g *Game) watchEvent() {
 	for {
-		event := <-g.eventChannel
+		event := <-g.EventChannel
 		switch event := event.(type) {
 		case FinishEvent:
 			g.handleFinishEvent(event)
@@ -68,15 +68,15 @@ func (g *Game) watchEvent() {
 }
 
 func (g *Game) handleAttackEvent(event AttackEvent) {
-	g.health[event.ID] = event.Health
+	g.Health[event.ID] = event.Health
 }
 
 func (g *Game) handleJoinEvent(event JoinEvent) {
 	player := Player{
-		id:   event.ID,
-		name: event.Name,
+		ID:   event.ID,
+		Name: event.Name,
 	}
-	g.players[event.ID] = player
+	g.Players[event.ID] = player
 }
 
 func (g *Game) handleStartEvent(event StartEvent) {
@@ -84,20 +84,20 @@ func (g *Game) handleStartEvent(event StartEvent) {
 	count := 0
 	output := []string{"4", "3", "2", "1", "start!!"}
 	for begin := time.Now(); time.Since(begin) < limit; {
-		g.log = output[count]
+		g.Log = output[count]
 		count += 1
 		time.Sleep(1 * time.Second)
 	}
 }
 
 func (g *Game) handleFinishEvent(event FinishEvent) {
-	g.log = fmt.Sprintf("Finish! %v Win!!\n", event.Winner)
+	g.Log = fmt.Sprintf("Finish! %v Win!!\n", event.Winner)
 }
 
 func (g *Game) handleQuestionEvent(event QuestionEvent) {
-	g.problem = event.Text
+	g.Problem = event.Text
 }
 
-func (g *Game) checkAnswer(input string) bool {
-	return input == g.problem
+func (g *Game) CheckAnswer(input string) bool {
+	return input == g.Problem
 }

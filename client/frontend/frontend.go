@@ -1,4 +1,4 @@
-package client
+package frontend
 
 import (
 	"fmt"
@@ -7,6 +7,7 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/mattn/go-runewidth"
 	"github.com/rivo/tview"
+	"github.com/yoRyuuuuu/typex/client/backend"
 )
 
 const refreshInterval = 16 * time.Millisecond
@@ -18,7 +19,7 @@ type View struct {
 	playerView    *tview.Flex
 	inputField    *tview.InputField
 	drawCallbacks []func()
-	*Game
+	*backend.Game
 }
 
 func (v *View) refresh() {
@@ -35,9 +36,9 @@ func (v *View) refresh() {
 func (v *View) setupProblemView() {
 	v.problemView.SetTitle("Problem").
 		SetBorder(true).
-		SetTitle(v.problem)
+		SetTitle(v.Problem)
 	callback := func() {
-		v.problemView.SetText(v.problem)
+		v.problemView.SetText(v.Problem)
 	}
 	v.drawCallbacks = append(v.drawCallbacks, callback)
 }
@@ -50,9 +51,9 @@ func (v *View) setupInputField() {
 	v.inputField.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyEnter:
-			if v.checkAnswer(v.inputField.GetText()) {
-				v.actionChannel <- AnswerAction{
-					text: v.inputField.GetText(),
+			if v.CheckAnswer(v.inputField.GetText()) {
+				v.ActionChannel <- backend.Answer{
+					Action: nil,
 				}
 				v.inputField.SetText("")
 			}
@@ -70,7 +71,7 @@ func (v *View) setupLogger() {
 func (v *View) drawLogger() {
 	v.logger.Clear().
 		SetBorder(true)
-	v.logger.SetText(v.log)
+	v.logger.SetText(v.Log)
 }
 
 func (v *View) setupPlayerView() {
@@ -84,19 +85,19 @@ func (v *View) drawPlayerView() {
 	mine := tview.NewTextView()
 	mine.SetTitle("YOU").
 		SetBorder(true)
-	mine.SetText(fmt.Sprintf("score: %v", v.health[v.id]))
+	mine.SetText(fmt.Sprintf("score: %v", v.Health[v.ID]))
 	v.playerView.AddItem(mine, 3, 0, false)
-	for _, player := range v.players {
+	for _, player := range v.Players {
 		// 他プレイヤーのスコアを描画
 		text := tview.NewTextView()
-		text.SetTitle(player.name).
+		text.SetTitle(player.ID).
 			SetBorder(true)
-		text.SetText(fmt.Sprintf("score: %v", v.health[player.id]))
+		text.SetText(fmt.Sprintf("score: %v", v.Health[player.ID]))
 		v.playerView.AddItem(text, 3, 0, false)
 	}
 }
 
-func NewView(game *Game) *View {
+func NewView(game *backend.Game) *View {
 	runewidth.DefaultCondition = &runewidth.Condition{EastAsianWidth: false}
 
 	app := tview.NewApplication()
