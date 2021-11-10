@@ -32,9 +32,9 @@ type Game struct {
 	PlayerID      []uuid.UUID
 	ActionChannel chan Action
 	EventChannel  chan Event
-	Mu            sync.RWMutex
-	WaitForRound  bool
+	HasStarted    bool
 	PlayerCount   int
+	Mu            sync.RWMutex
 }
 
 func NewGame() *Game {
@@ -45,9 +45,9 @@ func NewGame() *Game {
 		PlayerID:      []uuid.UUID{},
 		ActionChannel: make(chan Action, 1),
 		EventChannel:  make(chan Event, 1),
-		Mu:            sync.RWMutex{},
-		WaitForRound:  true,
+		HasStarted:    false,
 		PlayerCount:   0,
+		Mu:            sync.RWMutex{},
 	}
 
 	return game
@@ -67,7 +67,7 @@ func (g *Game) watchPlayerCount() {
 	time.Sleep(1 * time.Second)
 	g.EventChannel <- StartEvent{}
 	time.Sleep(5 * time.Second)
-	g.WaitForRound = false
+	g.HasStarted = true
 	for id := range g.Name {
 		g.Question(id)
 	}
@@ -76,7 +76,7 @@ func (g *Game) watchPlayerCount() {
 func (g *Game) watchAction() {
 	for {
 		action := <-g.ActionChannel
-		if g.WaitForRound {
+		if !g.HasStarted {
 			continue
 		}
 		g.Mu.Lock()
@@ -87,7 +87,7 @@ func (g *Game) watchAction() {
 
 func (g *Game) watchWinner() {
 	for {
-		if g.WaitForRound {
+		if !g.HasStarted {
 			continue
 		}
 
@@ -106,6 +106,8 @@ func (g *Game) watchWinner() {
 					g.EventChannel <- FinishEvent{
 						Winner: g.Name[k],
 					}
+
+					break
 				}
 			}
 		}

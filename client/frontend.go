@@ -14,7 +14,7 @@ const refreshInterval = 16 * time.Millisecond
 type View struct {
 	app           *tview.Application
 	logger        *tview.TextView
-	wordView      *tview.TextView
+	problemView   *tview.TextView
 	playerView    *tview.Flex
 	inputField    *tview.InputField
 	drawCallbacks []func()
@@ -32,12 +32,12 @@ func (v *View) refresh() {
 	}
 }
 
-func (v *View) setupWordView() {
-	v.wordView.SetTitle("Word").
+func (v *View) setupProblemView() {
+	v.problemView.SetTitle("Problem").
 		SetBorder(true).
-		SetTitle(v.word)
+		SetTitle(v.problem)
 	callback := func() {
-		v.wordView.SetText(v.word)
+		v.problemView.SetText(v.problem)
 	}
 	v.drawCallbacks = append(v.drawCallbacks, callback)
 }
@@ -104,8 +104,8 @@ func NewView(game *Game) *View {
 	flex := tview.NewFlex().SetDirection(tview.FlexRow)
 
 	// 単語のViewを配置
-	wordView := tview.NewTextView()
-	flex.AddItem(wordView, 3, 0, false)
+	problemView := tview.NewTextView()
+	flex.AddItem(problemView, 3, 0, false)
 	// inpuFieldを配置
 	inputField := tview.NewInputField()
 	flex.AddItem(inputField, 3, 0, true)
@@ -119,7 +119,7 @@ func NewView(game *Game) *View {
 	root.AddItem(playerView, 0, 1, false)
 	view := &View{
 		app:           app,
-		wordView:      wordView,
+		problemView:   problemView,
 		logger:        logger,
 		inputField:    inputField,
 		playerView:    playerView,
@@ -128,7 +128,7 @@ func NewView(game *Game) *View {
 	}
 
 	// UIのセットアップ
-	view.setupWordView()
+	view.setupProblemView()
 	view.setupInputField()
 	view.setupLogger()
 	view.setupPlayerView()

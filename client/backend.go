@@ -20,30 +20,28 @@ type AnswerAction struct {
 	text string
 }
 
-
-
 type Game struct {
-	word string
 	// GameClientから送信されるEvent
+	players       map[string]Player
+	health        map[string]int
 	eventChannel  chan Event
 	actionChannel chan Action
+	problem          string
 	log           string
-	players       map[string]Player
-	mutex         sync.Mutex
 	id            string
-	health        map[string]int
+	mutex         sync.Mutex
 }
 
 func NewGame() *Game {
 	game := &Game{
-		word:          "",
+		players:       map[string]Player{},
+		health:        map[string]int{},
 		eventChannel:  make(chan Event),
 		actionChannel: make(chan Action),
+		problem:          "",
 		log:           "",
-		players:       map[string]Player{},
-		mutex:         sync.Mutex{},
 		id:            "",
-		health:        map[string]int{},
+		mutex:         sync.Mutex{},
 	}
 
 	go game.watchEvent()
@@ -97,9 +95,9 @@ func (g *Game) handleFinishEvent(event FinishEvent) {
 }
 
 func (g *Game) handleQuestionEvent(event QuestionEvent) {
-	g.word = event.Text
+	g.problem = event.Text
 }
 
 func (g *Game) checkAnswer(input string) bool {
-	return input == g.word
+	return input == g.problem
 }
