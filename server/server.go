@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	. "github.com/yoRyuuuuu/typex/common"
 	"github.com/yoRyuuuuu/typex/proto"
 	"google.golang.org/grpc/metadata"
 )
@@ -191,13 +190,13 @@ func (s *GameServer) watchEvent() {
 			s.handleQuestionEvent(event)
 		case FinishEvent:
 			s.handleFinishEvent(event)
-		case AttackEvent:
+		case DamageEvent:
 			s.handleAttackEvent(event)
 		}
 	}
 }
 
-func (s *GameServer) handleAttackEvent(event AttackEvent) {
+func (s *GameServer) handleAttackEvent(event DamageEvent) {
 	for _, clt := range s.clients {
 		if clt.streamServer == nil {
 			continue
@@ -207,7 +206,7 @@ func (s *GameServer) handleAttackEvent(event AttackEvent) {
 			Action: &proto.Response_Attack{
 				Attack: &proto.Attack{
 					Id:     event.ID,
-					Health: int64(event.Health),
+					Health: int64(event.Damage),
 				},
 			},
 		}

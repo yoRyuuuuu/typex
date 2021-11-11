@@ -1,4 +1,4 @@
-package common
+package server
 
 import "github.com/google/uuid"
 
@@ -19,12 +19,12 @@ type StartEvent struct {
 	Event
 }
 
-type AttackEvent struct {
+type DamageEvent struct {
 	Event
 	// 攻撃を受けるPlayerのID
 	ID string
-	// 体力の数値
-	Health int
+	// ダメージの数値
+	Damage int
 }
 
 type JoinEvent struct {

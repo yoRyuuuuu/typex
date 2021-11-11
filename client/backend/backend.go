@@ -4,20 +4,11 @@ import (
 	"fmt"
 	"sync"
 	"time"
-
-	. "github.com/yoRyuuuuu/typex/common"
 )
 
 type Player struct {
 	ID   string
 	Name string
-}
-
-type Action interface{}
-
-type Answer struct {
-	Action
-	Text string
 }
 
 type Game struct {
@@ -65,8 +56,8 @@ func (g *Game) watchEvent() {
 			g.handleStartEvent(event)
 		case JoinEvent:
 			g.handleJoinEvent(event)
-		case AttackEvent:
-			g.handleAttackEvent(event)
+		case DamageEvent:
+			g.handleDamageEvent(event)
 		}
 	}
 }
@@ -77,15 +68,18 @@ func (g *Game) watchAction() {
 
 		switch action := action.(type) {
 		case Answer:
-			if g.CheckAnswer(action.Text) {
-				g.EventSender <- AttackEvent{}
+			_ = action
+			g.EventSender <- DamageEvent{
+				Event:  nil,
+				ID:     "",
+				Damage: 1,
 			}
 		}
 	}
 }
 
-func (g *Game) handleAttackEvent(event AttackEvent) {
-	g.Health[event.ID] = event.Health
+func (g *Game) handleDamageEvent(event DamageEvent) {
+	g.Health[event.ID] = event.Damage
 }
 
 func (g *Game) handleJoinEvent(event JoinEvent) {

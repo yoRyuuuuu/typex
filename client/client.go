@@ -5,8 +5,6 @@ import (
 	"log"
 
 	"github.com/yoRyuuuuu/typex/client/backend"
-	"github.com/yoRyuuuuu/typex/common"
-	. "github.com/yoRyuuuuu/typex/common"
 	"github.com/yoRyuuuuu/typex/proto"
 	"google.golang.org/grpc/metadata"
 )
@@ -67,24 +65,24 @@ func (c *GameClient) Start() {
 
 			switch res.GetAction().(type) {
 			case *proto.Response_Question:
-				c.game.EventReceiver <- QuestionEvent{
+				c.game.EventReceiver <- backend.QuestionEvent{
 					Text: res.GetQuestion().GetText(),
 				}
 			case *proto.Response_Start:
-				c.game.EventReceiver <- StartEvent{}
+				c.game.EventReceiver <- backend.StartEvent{}
 			case *proto.Response_Finish:
-				c.game.EventReceiver <- FinishEvent{
+				c.game.EventReceiver <- backend.FinishEvent{
 					Winner: res.GetFinish().GetWinner(),
 				}
 			case *proto.Response_Join:
-				c.game.EventReceiver <- JoinEvent{
+				c.game.EventReceiver <- backend.JoinEvent{
 					ID:   res.GetJoin().GetPlayer().Id,
 					Name: res.GetJoin().GetPlayer().Name,
 				}
 			case *proto.Response_Attack:
-				c.game.EventReceiver <- AttackEvent{
+				c.game.EventReceiver <- backend.DamageEvent{
 					ID:     res.GetAttack().GetId(),
-					Health: int(res.GetAttack().GetHealth()),
+					Damage: int(res.GetAttack().GetHealth()),
 				}
 			}
 		}
@@ -95,11 +93,9 @@ func (c *GameClient) Start() {
 			event := <-c.game.EventSender
 
 			switch event.(type) {
-			case common.AttackEvent:
+			case backend.DamageEvent:
 				req := &proto.Request{
-					Action: &proto.Request_Answer{
-						Answer: &proto.Answer{},
-					},
+					Action: &proto.Request_Answer{Answer: &proto.Answer{}},
 				}
 
 				if err := c.Stream.Send(req); err != nil {

@@ -7,7 +7,6 @@ import (
 	"time"
 
 	"github.com/google/uuid"
-	. "github.com/yoRyuuuuu/typex/common"
 )
 
 const MaxScore = 10
@@ -118,9 +117,9 @@ func (g *Game) watchWinner() {
 
 func (game *Game) AttackPlayer(id uuid.UUID) {
 	game.Health[id]--
-	game.EventChannel <- AttackEvent{
+	game.EventChannel <- DamageEvent{
 		ID:     id.String(),
-		Health: game.Health[id],
+		Damage: game.Health[id],
 	}
 }
 
