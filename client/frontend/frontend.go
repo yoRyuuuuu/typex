@@ -2,6 +2,7 @@ package frontend
 
 import (
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/gdamore/tcell/v2"
@@ -52,10 +53,29 @@ func (v *View) setupInputField() {
 		switch event.Key() {
 		case tcell.KeyEnter:
 			input := v.inputField.GetText()
-			v.ActionChannel <- backend.Answer{
-				Action: nil,
-				Text:   input,
+
+			if input[0] == '!' {
+				switch input[1:] {
+				case "random":
+					v.ActionReceiver <- backend.ModeChange{
+						Mode: backend.Random{},
+					}
+				default:
+					target, _ := strconv.Atoi(input[1:])
+					v.ActionReceiver <- backend.ModeChange{
+						Mode: backend.Aim{
+							Target: target,
+						},
+					}
+				}
+			} else {
+				v.ActionReceiver <- backend.Attack{
+					Action: nil,
+					Text:   input,
+					ID:     "",
+				}
 			}
+
 			v.inputField.SetText("")
 			return nil
 		}
@@ -87,8 +107,9 @@ func (v *View) drawPlayerView() {
 		SetBorder(true)
 	mine.SetText(fmt.Sprintf("HP: %v", v.Health[v.ID]))
 	v.playerView.AddItem(mine, 3, 0, false)
-	for _, player := range v.Players {
+	for _, id := range v.PlayerID {
 		// 他プレイヤーのスコアを描画
+		player := v.Players[id]
 		text := tview.NewTextView()
 		text.SetTitle(player.Name).
 			SetBorder(true)

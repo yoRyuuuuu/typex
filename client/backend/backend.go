@@ -2,6 +2,7 @@ package backend
 
 import (
 	"fmt"
+	"math/rand"
 	"sync"
 	"time"
 )
@@ -12,30 +13,32 @@ type Player struct {
 }
 
 type Game struct {
-	Players       map[string]Player
-	Health        map[string]int
-	PlayerID      []string
-	EventReceiver chan Event // GameClientから送信されるEventChannel
-	EventSender   chan Event // GameClientへ送信するEventChannel
-	ActionChannel chan Action
-	Problem       string
-	Log           string
-	ID            string
-	Mutex         sync.Mutex
+	Players        map[string]Player
+	Health         map[string]int
+	PlayerID       []string
+	Target         string
+	EventChannel   chan Event  // GameClientから送信されるEventChannel
+	ActionReceiver chan Action // GameClientへ送信するEventChannel
+	ActionSender   chan Action
+	Problem        string
+	Log            string
+	ID             string
+	Mutex          sync.Mutex
 }
 
 func NewGame() *Game {
 	game := &Game{
-		Players:       map[string]Player{},
-		Health:        map[string]int{},
-		PlayerID:      []string{},
-		EventReceiver: make(chan Event),
-		EventSender:   make(chan Event),
-		ActionChannel: make(chan Action),
-		Problem:       "",
-		Log:           "",
-		ID:            "",
-		Mutex:         sync.Mutex{},
+		Players:        map[string]Player{},
+		Health:         map[string]int{},
+		PlayerID:       []string{},
+		Target:         "",
+		EventChannel:   make(chan Event),
+		ActionReceiver: make(chan Action),
+		ActionSender:   make(chan Action),
+		Problem:        "",
+		Log:            "",
+		ID:             "",
+		Mutex:          sync.Mutex{},
 	}
 
 	go game.watchEvent()
@@ -46,7 +49,7 @@ func NewGame() *Game {
 
 func (g *Game) watchEvent() {
 	for {
-		event := <-g.EventReceiver
+		event := <-g.EventChannel
 		switch event := event.(type) {
 		case FinishEvent:
 			g.handleFinishEvent(event)
@@ -64,16 +67,29 @@ func (g *Game) watchEvent() {
 
 func (g *Game) watchAction() {
 	for {
-		action := <-g.ActionChannel
+		action := <-g.ActionReceiver
 
 		switch action := action.(type) {
-		case Answer:
+		case Attack:
 			_ = action
-			g.EventSender <- DamageEvent{
-				Event:  nil,
-				ID:     "",
-				Damage: 1,
+			g.ActionSender <- Attack{
+				Text: action.Text,
+				ID:   g.Target,
 			}
+		case ModeChange:
+			g.handleModeChangeAction(action)
+		}
+	}
+}
+
+func (g *Game) handleModeChangeAction(action ModeChange) {
+	switch mode := action.Mode.(type) {
+	case Random:
+		idx := rand.Intn(len(g.PlayerID))
+		g.Target = g.PlayerID[idx]
+	case Aim:
+		if mode.Target < len(g.PlayerID) {
+			g.Target = g.PlayerID[mode.Target]
 		}
 	}
 }
@@ -87,10 +103,14 @@ func (g *Game) handleJoinEvent(event JoinEvent) {
 		ID:   event.ID,
 		Name: event.Name,
 	}
+
+	g.PlayerID = append(g.PlayerID, player.ID)
 	g.Players[event.ID] = player
 }
 
 func (g *Game) handleStartEvent(event StartEvent) {
+	idx := rand.Intn(len(g.PlayerID))
+	g.Target = g.PlayerID[idx]
 	limit := 5 * time.Second
 	count := 0
 	output := []string{"4", "3", "2", "1", "start!!"}

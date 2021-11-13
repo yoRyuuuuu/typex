@@ -1,7 +1,5 @@
 package backend
 
-import "github.com/google/uuid"
-
 type Event interface{}
 
 type FinishEvent struct {
@@ -11,7 +9,6 @@ type FinishEvent struct {
 
 type QuestionEvent struct {
 	Event
-	ID   uuid.UUID
 	Text string
 }
 
@@ -31,11 +28,4 @@ type JoinEvent struct {
 	Event
 	ID   string
 	Name string
-}
-
-type Action interface{}
-
-type Answer struct {
-	Action
-	Text string
 }

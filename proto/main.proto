@@ -16,7 +16,9 @@ message ConnectResponse {
     repeated Player player = 2;
 }
 
-message Answer {
+message Attack {
+    string text = 1;
+    string id = 2;
 }
 
 message Question {
@@ -29,7 +31,7 @@ message Start {
 
 message Request {
     oneof action {
-        Answer answer = 1;
+        Attack attack = 1;
     }
 }
 
@@ -46,7 +48,7 @@ message Join {
     Player player = 1;
 }
 
-message Attack {
+message Damage {
     // 攻撃を受けるPlayerのID
     string id = 1;
     // 体力の数値
@@ -54,11 +56,11 @@ message Attack {
 }
 
 message Response {
-    oneof action {
+    oneof event {
         Question question = 1;
         Start start = 2;
         Finish finish = 3;
         Join join = 4;
-        Attack attack = 5;
+        Damage damage = 5;
     }
 }

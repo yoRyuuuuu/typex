@@ -3,11 +3,17 @@ package client
 import (
 	"context"
 	"log"
+	"math/rand"
+	"time"
 
 	"github.com/yoRyuuuuu/typex/client/backend"
 	"github.com/yoRyuuuuu/typex/proto"
 	"google.golang.org/grpc/metadata"
 )
+
+func init() {
+	rand.Seed(time.Now().UnixNano())
+}
 
 type GameClient struct {
 	Stream proto.Game_StreamClient
@@ -63,26 +69,27 @@ func (c *GameClient) Start() {
 				return
 			}
 
-			switch res.GetAction().(type) {
+			switch res.GetEvent().(type) {
 			case *proto.Response_Question:
-				c.game.EventReceiver <- backend.QuestionEvent{
+				c.game.EventChannel <- backend.QuestionEvent{
 					Text: res.GetQuestion().GetText(),
 				}
 			case *proto.Response_Start:
-				c.game.EventReceiver <- backend.StartEvent{}
+				c.game.EventChannel <- backend.StartEvent{}
 			case *proto.Response_Finish:
-				c.game.EventReceiver <- backend.FinishEvent{
+				c.game.EventChannel <- backend.FinishEvent{
 					Winner: res.GetFinish().GetWinner(),
 				}
 			case *proto.Response_Join:
-				c.game.EventReceiver <- backend.JoinEvent{
+				c.game.EventChannel <- backend.JoinEvent{
 					ID:   res.GetJoin().GetPlayer().Id,
 					Name: res.GetJoin().GetPlayer().Name,
 				}
-			case *proto.Response_Attack:
-				c.game.EventReceiver <- backend.DamageEvent{
-					ID:     res.GetAttack().GetId(),
-					Damage: int(res.GetAttack().GetHealth()),
+			case *proto.Response_Damage:
+				// 体力を更新する処理
+				c.game.EventChannel <- backend.DamageEvent{
+					ID:     res.GetDamage().GetId(),
+					Damage: int(res.GetDamage().GetHealth()),
 				}
 			}
 		}
@@ -90,12 +97,17 @@ func (c *GameClient) Start() {
 
 	go func() {
 		for {
-			event := <-c.game.EventSender
+			action := <-c.game.ActionSender
 
-			switch event.(type) {
-			case backend.DamageEvent:
+			switch action := action.(type) {
+			case backend.Attack:
 				req := &proto.Request{
-					Action: &proto.Request_Answer{Answer: &proto.Answer{}},
+					Action: &proto.Request_Attack{
+						Attack: &proto.Attack{
+							Text: action.Text,
+							Id:   action.ID,
+						},
+					},
 				}
 
 				if err := c.Stream.Send(req); err != nil {

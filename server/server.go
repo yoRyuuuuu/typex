@@ -13,7 +13,7 @@ import (
 )
 
 var clientTimeout = 15.0
-var maxPlayer = 2
+var maxPlayer = 3
 
 type client struct {
 	streamServer proto.Game_StreamServer
@@ -91,8 +91,8 @@ func (s *GameServer) Stream(srv proto.Game_StreamServer) error {
 			clt.lastMessage = time.Now()
 
 			switch req.GetAction().(type) {
-			case *proto.Request_Answer:
-				s.handleAnswerRequest(req, clt)
+			case *proto.Request_Attack:
+				s.handleAttackRequest(req, clt)
 			}
 		}
 	}()
@@ -141,7 +141,7 @@ func (s *GameServer) Connect(ctx context.Context, req *proto.ConnectRequest) (*p
 
 		// 他のプレイヤーへ参加者情報を通知
 		resp := &proto.Response{
-			Action: &proto.Response_Join{
+			Event: &proto.Response_Join{
 				Join: &proto.Join{
 					Player: player,
 				},
@@ -173,9 +173,11 @@ func (s *GameServer) Connect(ctx context.Context, req *proto.ConnectRequest) (*p
 	}, nil
 }
 
-func (s *GameServer) handleAnswerRequest(req *proto.Request, clt *client) {
-	s.game.ActionChannel <- AnswerAction{
-		ID: clt.id,
+func (s *GameServer) handleAttackRequest(req *proto.Request, clt *client) {
+	s.game.ActionChannel <- AttackAction{
+		ID:     clt.id,
+		Text:   req.GetAttack().GetText(),
+		Target: req.GetAttack().GetId(),
 	}
 }
 
@@ -191,20 +193,20 @@ func (s *GameServer) watchEvent() {
 		case FinishEvent:
 			s.handleFinishEvent(event)
 		case DamageEvent:
-			s.handleAttackEvent(event)
+			s.handleDamageEvent(event)
 		}
 	}
 }
 
-func (s *GameServer) handleAttackEvent(event DamageEvent) {
+func (s *GameServer) handleDamageEvent(event DamageEvent) {
 	for _, clt := range s.clients {
 		if clt.streamServer == nil {
 			continue
 		}
 
 		resp := &proto.Response{
-			Action: &proto.Response_Attack{
-				Attack: &proto.Attack{
+			Event: &proto.Response_Damage{
+				Damage: &proto.Damage{
 					Id:     event.ID,
 					Health: int64(event.Damage),
 				},
@@ -225,7 +227,7 @@ func (s *GameServer) handleFinishEvent(event FinishEvent) {
 		}
 
 		res := &proto.Response{
-			Action: &proto.Response_Finish{
+			Event: &proto.Response_Finish{
 				Finish: &proto.Finish{
 					Winner: event.Winner,
 				},
@@ -246,7 +248,7 @@ func (s *GameServer) handleStartEvent() {
 		}
 
 		res := &proto.Response{
-			Action: &proto.Response_Start{},
+			Event: &proto.Response_Start{},
 		}
 
 		if err := clt.streamServer.Send(res); err != nil {
@@ -265,7 +267,7 @@ func (s *GameServer) handleQuestionEvent(event QuestionEvent) {
 	}
 
 	res := &proto.Response{
-		Action: &proto.Response_Question{
+		Event: &proto.Response_Question{
 			Question: &proto.Question{
 				Text: text,
 			},

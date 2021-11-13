@@ -1,6 +1,7 @@
 package server
 
 import (
+	"fmt"
 	"log"
 	"math/rand"
 	"sync"
@@ -20,8 +21,10 @@ type Action interface {
 	Perform(game *Game)
 }
 
-type AnswerAction struct {
-	ID uuid.UUID
+type AttackAction struct {
+	ID     uuid.UUID
+	Text   string
+	Target string
 }
 
 type Game struct {
@@ -115,18 +118,27 @@ func (g *Game) watchWinner() {
 	}
 }
 
-func (game *Game) AttackPlayer(id uuid.UUID) {
+func (game *Game) DamagePlayer(target string) {
+	id, _ := uuid.Parse(target)
 	game.Health[id]--
 	game.EventChannel <- DamageEvent{
-		ID:     id.String(),
+		ID:     target,
 		Damage: game.Health[id],
 	}
 }
 
-func (action AnswerAction) Perform(game *Game) {
-	idx := rand.Intn(len(game.PlayerID))
-	game.AttackPlayer(game.PlayerID[idx])
-	name := game.Name[action.ID]
+func (action AttackAction) Perform(game *Game) {
+	fmt.Println(action)
+	// 不正解ならreturn
+	if action.Text != game.Problem[action.ID].Peek() {
+		return
+	}
+
+	game.Problem[action.ID].Next()
+	// ダメージ処理
+	game.DamagePlayer(action.Target)
+	id, _ := uuid.Parse(action.Target)
+	name := game.Name[id]
 	log.Printf("%v's health is %v", name, game.Health[action.ID])
 	game.Question(action.ID)
 }
@@ -134,6 +146,6 @@ func (action AnswerAction) Perform(game *Game) {
 func (g *Game) Question(id uuid.UUID) {
 	g.EventChannel <- QuestionEvent{
 		ID:   id,
-		Text: g.Problem[id].Next(),
+		Text: g.Problem[id].Peek(),
 	}
 }
