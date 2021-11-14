@@ -29,7 +29,7 @@ type AttackAction struct {
 
 type Game struct {
 	Health        map[uuid.UUID]int
-	Problem       map[uuid.UUID]*Dataset
+	Problem       map[uuid.UUID]IIterator
 	Name          map[uuid.UUID]string
 	PlayerID      []uuid.UUID
 	ActionChannel chan Action
@@ -42,7 +42,7 @@ type Game struct {
 func NewGame() *Game {
 	game := &Game{
 		Health:        make(map[uuid.UUID]int),
-		Problem:       make(map[uuid.UUID]*Dataset),
+		Problem:       make(map[uuid.UUID]IIterator),
 		Name:          make(map[uuid.UUID]string),
 		PlayerID:      []uuid.UUID{},
 		ActionChannel: make(chan Action, 1),
