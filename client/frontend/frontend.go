@@ -111,8 +111,15 @@ func (v *View) drawPlayerView() {
 		// 他プレイヤーのスコアを描画
 		player := v.Players[id]
 		text := tview.NewTextView()
-		text.SetTitle(player.Name).
+
+		name := player.Name
+		// 攻撃目標なら赤色
+		if id == v.Target {
+			name = fmt.Sprintf("[red]%v", name)
+		}
+		text.SetTitle(name).
 			SetBorder(true)
+
 		text.SetText(fmt.Sprintf("HP: %v", v.Health[player.ID]))
 		v.playerView.AddItem(text, 3, 0, false)
 	}
