@@ -62,7 +62,7 @@ func (g *Game) Start() {
 }
 
 func (g *Game) watchPlayerCount() {
-	for g.PlayerCount < maxPlayer {
+	for g.PlayerCount < PlayerCount {
 		continue
 	}
 

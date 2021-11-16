@@ -12,8 +12,8 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
+var PlayerCount = 5
 var clientTimeout = 15.0
-var maxPlayer = 3
 
 type client struct {
 	streamServer proto.Game_StreamServer
@@ -112,7 +112,7 @@ func (s *GameServer) Stream(srv proto.Game_StreamServer) error {
 }
 
 func (s *GameServer) Connect(ctx context.Context, req *proto.ConnectRequest) (*proto.ConnectResponse, error) {
-	if len(s.clients) >= maxPlayer {
+	if len(s.clients) >= PlayerCount {
 		return nil, errors.New("The server is full")
 	}
 
