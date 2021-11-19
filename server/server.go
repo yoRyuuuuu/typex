@@ -160,9 +160,14 @@ func (s *GameServer) Connect(ctx context.Context, req *proto.ConnectRequest) (*p
 		name:        req.GetName(),
 	}
 
-	s.game.Health[token] = InitialHealth
 	s.game.Problem[token] = NewDatasetIterator()
-	s.game.Name[token] = req.GetName()
+
+	playerInfo := &PlayerInfo{
+		Health: InitialHealth,
+		Name:   req.GetName(),
+	}
+	s.game.PlayerInfo[token] = playerInfo
+
 	s.game.PlayerCount++
 	log.Printf("[Player: %v]", s.game.PlayerCount)
 	s.mu.Unlock()

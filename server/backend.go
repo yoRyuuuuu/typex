@@ -27,10 +27,14 @@ type AttackAction struct {
 	Target string
 }
 
+type PlayerInfo struct {
+	Name   string
+	Health int
+}
+
 type Game struct {
-	Health        map[uuid.UUID]int
 	Problem       map[uuid.UUID]IIterator
-	Name          map[uuid.UUID]string
+	PlayerInfo    map[uuid.UUID]*PlayerInfo
 	PlayerID      []uuid.UUID
 	ActionChannel chan Action
 	EventChannel  chan Event
@@ -41,9 +45,8 @@ type Game struct {
 
 func NewGame() *Game {
 	game := &Game{
-		Health:        make(map[uuid.UUID]int),
 		Problem:       make(map[uuid.UUID]IIterator),
-		Name:          make(map[uuid.UUID]string),
+		PlayerInfo:    make(map[uuid.UUID]*PlayerInfo),
 		PlayerID:      []uuid.UUID{},
 		ActionChannel: make(chan Action, 1),
 		EventChannel:  make(chan Event, 1),
@@ -70,7 +73,7 @@ func (g *Game) watchPlayerCount() {
 	g.EventChannel <- StartEvent{}
 	time.Sleep(5 * time.Second)
 	g.HasStarted = true
-	for id := range g.Name {
+	for _, id := range g.PlayerID {
 		g.Question(id)
 	}
 }
@@ -96,19 +99,18 @@ func (g *Game) watchWinner() {
 		g.Mu.RLock()
 		// 体力が1以上のプレイヤーが1人のとき終了
 		var count = 0
-		for _, v := range g.Health {
-			if v >= 1 {
+		for _, player := range g.PlayerInfo {
+			if player.Health >= 1 {
 				count += 1
 			}
 		}
 
 		if count == 1 {
-			for k, v := range g.Health {
-				if v >= 1 {
+			for k, player := range g.PlayerInfo {
+				if player.Health >= 1 {
 					g.EventChannel <- FinishEvent{
-						Winner: g.Name[k],
+						Winner: g.PlayerInfo[k].Name,
 					}
-
 					break
 				}
 			}
@@ -120,10 +122,10 @@ func (g *Game) watchWinner() {
 
 func (game *Game) DamagePlayer(target string) {
 	id, _ := uuid.Parse(target)
-	game.Health[id]--
+	game.PlayerInfo[id].Health--
 	game.EventChannel <- DamageEvent{
 		ID:     target,
-		Damage: game.Health[id],
+		Damage: game.PlayerInfo[id].Health,
 	}
 }
 
@@ -138,8 +140,8 @@ func (action AttackAction) Perform(game *Game) {
 	// ダメージ処理
 	game.DamagePlayer(action.Target)
 	id, _ := uuid.Parse(action.Target)
-	name := game.Name[id]
-	log.Printf("%v's health is %v", name, game.Health[action.ID])
+	name := game.PlayerInfo[id].Name
+	log.Printf("%v's health is %v", name, game.PlayerInfo[action.ID].Health)
 	game.Question(action.ID)
 }
 
