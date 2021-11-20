@@ -3,6 +3,7 @@ package server
 import (
 	"context"
 	"errors"
+	"fmt"
 	"log"
 	"sync"
 	"time"
@@ -129,26 +130,28 @@ func (s *GameServer) Connect(ctx context.Context, req *proto.ConnectRequest) (*p
 	}
 	s.game.PlayerInfo[token] = playerInfo
 
-	others := []*proto.Player{}
+	players := []*proto.Player{}
 	for _, clt := range s.clients {
 		if clt.streamServer == nil {
 			continue
 		}
 
 		// すでに参加しているプレイヤーの情報を追加
-		other := &proto.Player{
-			Id:   clt.id.String(),
-			Name: clt.name,
+		player := &proto.Player{
+			Id:     clt.id.String(),
+			Name:   clt.name,
+			Health: InitialHealth,
 		}
-		others = append(others, other)
+		players = append(players, player)
 
 		// 他のプレイヤーへ参加者情報を通知
 		resp := &proto.Response{
 			Event: &proto.Response_Join{
 				Join: &proto.Join{
 					Player: &proto.Player{
-						Id:   token.String(),
-						Name: req.GetName(),
+						Id:     token.String(),
+						Name:   req.GetName(),
+						Health: InitialHealth,
 					},
 				},
 			},
@@ -158,6 +161,13 @@ func (s *GameServer) Connect(ctx context.Context, req *proto.ConnectRequest) (*p
 			log.Printf("failed to send finish event %v: %v", clt.name, err)
 		}
 	}
+
+	player := &proto.Player{
+		Id:     token.String(),
+		Name:   req.GetName(),
+		Health: InitialHealth,
+	}
+	players = append(players, player)
 
 	s.clients[token] = &client{
 		id:          token,
@@ -170,9 +180,11 @@ func (s *GameServer) Connect(ctx context.Context, req *proto.ConnectRequest) (*p
 	log.Printf("[Player: %v]", s.game.PlayerCount)
 	s.mu.Unlock()
 
+	fmt.Println(players)
 	return &proto.ConnectResponse{
 		Token:  token.String(),
-		Player: others,
+		Health: int64(InitialHealth),
+		Player: players,
 	}, nil
 }
 

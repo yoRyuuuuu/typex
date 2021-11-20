@@ -37,21 +37,16 @@ func (c *GameClient) Connect(grpcClient proto.GameClient, playerName string) err
 	}
 
 	c.game.ID = res.GetToken()
-	// 自身のPlayerInfoを追加
-	playerInfo := &backend.PlayerInfo{
-		ID:   c.game.ID,
-		Name: playerName,
-	}
-	c.game.PlayerInfo[c.game.ID] = playerInfo
-
-	// Playerが参加したことを通知
 	for _, player := range res.GetPlayer() {
 		playerInfo := &backend.PlayerInfo{
-			ID:   player.Id,
-			Name: player.Name,
+			ID:     player.Id,
+			Name:   player.Name,
+			Health: int(player.Health),
 		}
 		c.game.PlayerInfo[player.Id] = playerInfo
-		c.game.PlayerID = append(c.game.PlayerID, player.Id)
+		if player.Id != c.game.ID {
+			c.game.PlayerID = append(c.game.PlayerID, player.Id)
+		}
 	}
 
 	header := metadata.New(map[string]string{"authorization": res.Token})
@@ -88,8 +83,9 @@ func (c *GameClient) Start() {
 				}
 			case *proto.Response_Join:
 				c.game.EventChannel <- backend.JoinEvent{
-					ID:   res.GetJoin().GetPlayer().Id,
-					Name: res.GetJoin().GetPlayer().Name,
+					ID:     res.GetJoin().GetPlayer().Id,
+					Name:   res.GetJoin().GetPlayer().Name,
+					Health: int(res.GetJoin().GetPlayer().Health),
 				}
 			case *proto.Response_Damage:
 				// 体力を更新する処理

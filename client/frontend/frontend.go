@@ -120,7 +120,7 @@ func (v *View) drawPlayerView() {
 		text.SetTitle(name).
 			SetBorder(true)
 
-		text.SetText(fmt.Sprintf("HP: %v", v.PlayerInfo[player.ID].Health))
+		text.SetText(fmt.Sprintf("HP: %v", player.Health))
 		v.playerView.AddItem(text, 3, 0, false)
 	}
 }

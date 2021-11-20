@@ -26,6 +26,7 @@ type DamageEvent struct {
 
 type JoinEvent struct {
 	Event
-	ID   string
-	Name string
+	ID     string
+	Name   string
+	Health int
 }

@@ -99,8 +99,9 @@ func (g *Game) handleDamageEvent(event DamageEvent) {
 
 func (g *Game) handleJoinEvent(event JoinEvent) {
 	playerInfo := PlayerInfo{
-		ID:   event.ID,
-		Name: event.Name,
+		ID:     event.ID,
+		Name:   event.Name,
+		Health: event.Health,
 	}
 
 	g.PlayerID = append(g.PlayerID, playerInfo.ID)
