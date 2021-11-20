@@ -120,30 +120,36 @@ func (s *GameServer) Connect(ctx context.Context, req *proto.ConnectRequest) (*p
 	s.mu.Lock()
 	token := uuid.New()
 
+	// プレイヤー情報をゲームサーバに登録
 	s.game.PlayerID = append(s.game.PlayerID, token)
-	players := []*proto.Player{}
-	player := &proto.Player{
-		Id:   token.String(),
-		Name: req.GetName(),
+	s.game.Problem[token] = NewDatasetIterator()
+	playerInfo := &PlayerInfo{
+		Health: InitialHealth,
+		Name:   req.GetName(),
 	}
+	s.game.PlayerInfo[token] = playerInfo
 
+	others := []*proto.Player{}
 	for _, clt := range s.clients {
 		if clt.streamServer == nil {
 			continue
 		}
 
-		others := &proto.Player{
+		// すでに参加しているプレイヤーの情報を追加
+		other := &proto.Player{
 			Id:   clt.id.String(),
 			Name: clt.name,
 		}
-
-		players = append(players, others)
+		others = append(others, other)
 
 		// 他のプレイヤーへ参加者情報を通知
 		resp := &proto.Response{
 			Event: &proto.Response_Join{
 				Join: &proto.Join{
-					Player: player,
+					Player: &proto.Player{
+						Id:   token.String(),
+						Name: req.GetName(),
+					},
 				},
 			},
 		}
@@ -160,21 +166,13 @@ func (s *GameServer) Connect(ctx context.Context, req *proto.ConnectRequest) (*p
 		name:        req.GetName(),
 	}
 
-	s.game.Problem[token] = NewDatasetIterator()
-
-	playerInfo := &PlayerInfo{
-		Health: InitialHealth,
-		Name:   req.GetName(),
-	}
-	s.game.PlayerInfo[token] = playerInfo
-
 	s.game.PlayerCount++
 	log.Printf("[Player: %v]", s.game.PlayerCount)
 	s.mu.Unlock()
 
 	return &proto.ConnectResponse{
 		Token:  token.String(),
-		Player: players,
+		Player: others,
 	}, nil
 }
 
