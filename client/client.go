@@ -37,14 +37,20 @@ func (c *GameClient) Connect(grpcClient proto.GameClient, playerName string) err
 	}
 
 	c.game.ID = res.GetToken()
+	// 自身のPlayerInfoを追加
+	playerInfo := &backend.PlayerInfo{
+		ID:   c.game.ID,
+		Name: playerName,
+	}
+	c.game.PlayerInfo[c.game.ID] = playerInfo
 
 	// Playerが参加したことを通知
 	for _, player := range res.GetPlayer() {
-		p := backend.Player{
+		playerInfo := &backend.PlayerInfo{
 			ID:   player.Id,
 			Name: player.Name,
 		}
-		c.game.Players[player.Id] = p
+		c.game.PlayerInfo[player.Id] = playerInfo
 		c.game.PlayerID = append(c.game.PlayerID, player.Id)
 	}
 

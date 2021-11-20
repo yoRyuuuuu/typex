@@ -105,11 +105,11 @@ func (v *View) drawPlayerView() {
 	mine := tview.NewTextView()
 	mine.SetTitle("YOU").
 		SetBorder(true)
-	mine.SetText(fmt.Sprintf("HP: %v", v.Health[v.ID]))
+	mine.SetText(fmt.Sprintf("HP: %v", v.PlayerInfo[v.ID].Health))
 	v.playerView.AddItem(mine, 3, 0, false)
 	for _, id := range v.PlayerID {
 		// 他プレイヤーのスコアを描画
-		player := v.Players[id]
+		player := v.PlayerInfo[id]
 		text := tview.NewTextView()
 
 		name := player.Name
@@ -120,7 +120,7 @@ func (v *View) drawPlayerView() {
 		text.SetTitle(name).
 			SetBorder(true)
 
-		text.SetText(fmt.Sprintf("HP: %v", v.Health[player.ID]))
+		text.SetText(fmt.Sprintf("HP: %v", v.PlayerInfo[player.ID].Health))
 		v.playerView.AddItem(text, 3, 0, false)
 	}
 }

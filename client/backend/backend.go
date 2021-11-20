@@ -7,14 +7,14 @@ import (
 	"time"
 )
 
-type Player struct {
-	ID   string
-	Name string
+type PlayerInfo struct {
+	ID     string
+	Name   string
+	Health int
 }
 
 type Game struct {
-	Players        map[string]Player
-	Health         map[string]int
+	PlayerInfo     map[string]*PlayerInfo
 	PlayerID       []string
 	Target         string
 	EventChannel   chan Event  // GameClientから送信されるEventChannel
@@ -28,8 +28,7 @@ type Game struct {
 
 func NewGame() *Game {
 	game := &Game{
-		Players:        map[string]Player{},
-		Health:         map[string]int{},
+		PlayerInfo:     make(map[string]*PlayerInfo),
 		PlayerID:       []string{},
 		Target:         "",
 		EventChannel:   make(chan Event),
@@ -95,17 +94,17 @@ func (g *Game) handleModeChangeAction(action ModeChange) {
 }
 
 func (g *Game) handleDamageEvent(event DamageEvent) {
-	g.Health[event.ID] = event.Damage
+	g.PlayerInfo[event.ID].Health = event.Damage
 }
 
 func (g *Game) handleJoinEvent(event JoinEvent) {
-	player := Player{
+	playerInfo := PlayerInfo{
 		ID:   event.ID,
 		Name: event.Name,
 	}
 
-	g.PlayerID = append(g.PlayerID, player.ID)
-	g.Players[event.ID] = player
+	g.PlayerID = append(g.PlayerID, playerInfo.ID)
+	g.PlayerInfo[event.ID] = &playerInfo
 }
 
 func (g *Game) handleStartEvent(event StartEvent) {
