@@ -1,7 +1,6 @@
 package server
 
 import (
-	"fmt"
 	"log"
 	"math/rand"
 	"sync"
@@ -130,7 +129,12 @@ func (game *Game) DamagePlayer(target string) {
 }
 
 func (action AttackAction) Perform(game *Game) {
-	fmt.Println(action)
+	// Healthが0なら無効
+	id := action.ID
+	if game.PlayerInfo[id].Health <= 0 {
+		return
+	}
+
 	// 不正解ならreturn
 	if action.Text != game.Problem[action.ID].Peek() {
 		return
@@ -139,8 +143,8 @@ func (action AttackAction) Perform(game *Game) {
 	game.Problem[action.ID].Next()
 	// ダメージ処理
 	game.DamagePlayer(action.Target)
-	id, _ := uuid.Parse(action.Target)
-	name := game.PlayerInfo[id].Name
+	targetID, _ := uuid.Parse(action.Target)
+	name := game.PlayerInfo[targetID].Name
 	log.Printf("%v's health is %v", name, game.PlayerInfo[action.ID].Health)
 	game.Question(action.ID)
 }
