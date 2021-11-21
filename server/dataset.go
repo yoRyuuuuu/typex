@@ -1,10 +1,7 @@
 package server
 
 import (
-	"bufio"
-	"log"
 	"math/rand"
-	"os"
 )
 
 var datasetSingleton *dataset = newDataset()
@@ -19,25 +16,8 @@ type IIterator interface {
 }
 
 func newDataset() *dataset {
-	fp, err := os.Open("./assets/dataset.csv")
-	if err != nil {
-		log.Fatal(err)
-	}
-	defer fp.Close()
-
-	sc := bufio.NewScanner(fp)
-
-	var text []string
-	for sc.Scan() {
-		text = append(text, sc.Text())
-	}
-
-	if err := sc.Err(); err != nil {
-		log.Fatal(err)
-	}
-
 	return &dataset{
-		text: text,
+		text: Words,
 	}
 }
 
