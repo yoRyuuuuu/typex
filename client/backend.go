@@ -23,6 +23,7 @@ type Game struct {
 	Problem        string
 	Log            string
 	ID             string
+	Logger         Logger
 	Mutex          sync.Mutex
 }
 
@@ -34,8 +35,8 @@ func NewGame() *Game {
 		EventChannel:   make(chan Event),
 		ActionReceiver: make(chan Action),
 		ActionSender:   make(chan Action),
+		Logger:         *NewLogger(),
 		Problem:        "",
-		Log:            "",
 		ID:             "",
 		Mutex:          sync.Mutex{},
 	}
@@ -67,10 +68,8 @@ func (g *Game) watchEvent() {
 func (g *Game) watchAction() {
 	for {
 		action := <-g.ActionReceiver
-
 		switch action := action.(type) {
 		case Attack:
-			_ = action
 			g.ActionSender <- Attack{
 				Text: action.Text,
 				ID:   g.Target,
@@ -103,7 +102,6 @@ func (g *Game) handleJoinEvent(event JoinEvent) {
 		Name:   event.Name,
 		Health: event.Health,
 	}
-
 	g.PlayerID = append(g.PlayerID, playerInfo.ID)
 	g.PlayerInfo[event.ID] = &playerInfo
 }
@@ -115,14 +113,14 @@ func (g *Game) handleStartEvent(event StartEvent) {
 	count := 0
 	output := []string{"4", "3", "2", "1", "start!!"}
 	for begin := time.Now(); time.Since(begin) < limit; {
-		g.Log = output[count]
+		g.Logger.PutString(fmt.Sprintln(output[count]))
 		count += 1
 		time.Sleep(1 * time.Second)
 	}
 }
 
 func (g *Game) handleFinishEvent(event FinishEvent) {
-	g.Log = fmt.Sprintf("Finish! %v Win!!\n", event.Winner)
+	g.Logger.PutString(fmt.Sprintf("Finish! %v Win!!\n", event.Winner))
 }
 
 func (g *Game) handleQuestionEvent(event QuestionEvent) {

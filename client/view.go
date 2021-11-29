@@ -44,15 +44,13 @@ func (v *View) setupProblemView() {
 }
 
 func (v *View) setupInputField() {
-	v.inputField.SetLabel("input: ")
+	v.inputField.SetLabel("Input: ")
 	v.inputField.SetTitle("Terminal").
 		SetBorder(true)
-
 	v.inputField.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyEnter:
 			input := v.inputField.GetText()
-
 			if input[0] == '!' {
 				switch input[1:] {
 				case "random":
@@ -90,7 +88,7 @@ func (v *View) setupLogger() {
 func (v *View) drawLogger() {
 	v.logger.Clear().
 		SetBorder(true)
-	v.logger.SetText(v.Log)
+	v.logger.SetText(v.Logger.String())
 }
 
 func (v *View) setupPlayerView() {
