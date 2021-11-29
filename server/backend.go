@@ -110,7 +110,7 @@ func (g *Game) watchWinner() {
 					g.EventChannel <- FinishEvent{
 						Winner: g.PlayerInfo[k].Name,
 					}
-					break
+					return
 				}
 			}
 		}
