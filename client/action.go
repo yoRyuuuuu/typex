@@ -12,3 +12,14 @@ type ModeChange struct {
 	Action
 	Mode
 }
+
+type Mode interface{}
+
+type Random struct {
+	Mode
+}
+
+type Aim struct {
+	Mode
+	Target int
+}
