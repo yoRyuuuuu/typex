@@ -44,9 +44,10 @@ func (v *View) setupProblemView() {
 }
 
 func (v *View) setupInputField() {
-	v.inputField.SetLabel("Input: ")
-	v.inputField.SetTitle("Terminal").
+	v.inputField.SetLabel("Input: ").
+		SetTitle("Terminal").
 		SetBorder(true)
+
 	v.inputField.SetInputCapture(func(event *tcell.EventKey) *tcell.EventKey {
 		switch event.Key() {
 		case tcell.KeyEnter:

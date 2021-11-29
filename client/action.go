@@ -8,12 +8,12 @@ type Attack struct {
 	ID   string
 }
 
+type Mode interface{}
+
 type ModeChange struct {
 	Action
 	Mode
 }
-
-type Mode interface{}
 
 type Random struct {
 	Mode
