@@ -14,12 +14,12 @@ type PlayerInfo struct {
 }
 
 type Game struct {
+	EventChannel   chan Event
+	ActionReceiver chan Action
+	ActionSender   chan Action
 	PlayerInfo     map[string]*PlayerInfo
 	PlayerID       []string
 	Target         string
-	EventChannel   chan Event  // GameClientから送信されるEventChannel
-	ActionReceiver chan Action // GameClientへ送信するEventChannel
-	ActionSender   chan Action
 	Problem        string
 	Log            string
 	ID             string
@@ -29,16 +29,15 @@ type Game struct {
 
 func NewGame() *Game {
 	game := &Game{
-		PlayerInfo:     make(map[string]*PlayerInfo),
-		PlayerID:       []string{},
-		Target:         "",
 		EventChannel:   make(chan Event),
 		ActionReceiver: make(chan Action),
 		ActionSender:   make(chan Action),
+		PlayerInfo:     make(map[string]*PlayerInfo),
+		PlayerID:       []string{},
 		Logger:         *NewLogger(),
+		Target:         "",
 		Problem:        "",
 		ID:             "",
-		Mutex:          sync.Mutex{},
 	}
 
 	go game.watchEvent()
@@ -121,6 +120,7 @@ func (g *Game) handleStartEvent(event StartEvent) {
 
 func (g *Game) handleFinishEvent(event FinishEvent) {
 	g.Logger.PutString(fmt.Sprintf("Finish! %v Win!!\n", event.Winner))
+	g.Logger.PutString(fmt.Sprintf("Press contrl+c to exit\n"))
 }
 
 func (g *Game) handleQuestionEvent(event QuestionEvent) {
