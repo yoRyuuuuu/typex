@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/yoRyuuuuu/typex/client/backend"
 	"github.com/yoRyuuuuu/typex/proto"
 	"google.golang.org/grpc/metadata"
 )
@@ -17,10 +16,10 @@ func init() {
 
 type GameClient struct {
 	Stream proto.Game_StreamClient
-	game   *backend.Game
+	game   *Game
 }
 
-func NewGameClient(game *backend.Game) *GameClient {
+func NewGameClient(game *Game) *GameClient {
 	return &GameClient{
 		game: game,
 	}
@@ -38,7 +37,7 @@ func (c *GameClient) Connect(grpcClient proto.GameClient, playerName string) err
 
 	c.game.ID = res.GetToken()
 	for _, player := range res.GetPlayer() {
-		playerInfo := &backend.PlayerInfo{
+		playerInfo := &PlayerInfo{
 			ID:     player.Id,
 			Name:   player.Name,
 			Health: int(player.Health),
@@ -72,24 +71,24 @@ func (c *GameClient) Start() {
 
 			switch res.GetEvent().(type) {
 			case *proto.Response_Question:
-				c.game.EventChannel <- backend.QuestionEvent{
+				c.game.EventChannel <- QuestionEvent{
 					Text: res.GetQuestion().GetText(),
 				}
 			case *proto.Response_Start:
-				c.game.EventChannel <- backend.StartEvent{}
+				c.game.EventChannel <- StartEvent{}
 			case *proto.Response_Finish:
-				c.game.EventChannel <- backend.FinishEvent{
+				c.game.EventChannel <- FinishEvent{
 					Winner: res.GetFinish().GetWinner(),
 				}
 			case *proto.Response_Join:
-				c.game.EventChannel <- backend.JoinEvent{
+				c.game.EventChannel <- JoinEvent{
 					ID:     res.GetJoin().GetPlayer().Id,
 					Name:   res.GetJoin().GetPlayer().Name,
 					Health: int(res.GetJoin().GetPlayer().Health),
 				}
 			case *proto.Response_Damage:
 				// 体力を更新する処理
-				c.game.EventChannel <- backend.DamageEvent{
+				c.game.EventChannel <- DamageEvent{
 					ID:     res.GetDamage().GetId(),
 					Damage: int(res.GetDamage().GetHealth()),
 				}
@@ -102,7 +101,7 @@ func (c *GameClient) Start() {
 			action := <-c.game.ActionSender
 
 			switch action := action.(type) {
-			case backend.Attack:
+			case Attack:
 				req := &proto.Request{
 					Action: &proto.Request_Attack{
 						Attack: &proto.Attack{

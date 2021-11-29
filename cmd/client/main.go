@@ -6,8 +6,6 @@ import (
 	"log"
 
 	"github.com/yoRyuuuuu/typex/client"
-	"github.com/yoRyuuuuu/typex/client/backend"
-	"github.com/yoRyuuuuu/typex/client/frontend"
 	"github.com/yoRyuuuuu/typex/proto"
 	"google.golang.org/grpc"
 )
@@ -23,12 +21,11 @@ func main() {
 		log.Fatalf("can Not connect with server %v", err)
 	}
 
-	game := backend.NewGame()
+	game := client.NewGame()
 	clt := client.NewGameClient(game)
 	grpcClient := proto.NewGameClient(conn)
 	err = clt.Connect(grpcClient, *name)
-
-	view := frontend.NewView(game)
+	view := client.NewView(game)
 
 	if err != nil {
 		log.Fatalf("connect request failed %v", err)

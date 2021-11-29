@@ -1,4 +1,4 @@
-package frontend
+package client
 
 import (
 	"fmt"
@@ -8,7 +8,6 @@ import (
 	"github.com/gdamore/tcell/v2"
 	"github.com/mattn/go-runewidth"
 	"github.com/rivo/tview"
-	"github.com/yoRyuuuuu/typex/client/backend"
 )
 
 const refreshInterval = 16 * time.Millisecond
@@ -20,7 +19,7 @@ type View struct {
 	playerView    *tview.Flex
 	inputField    *tview.InputField
 	drawCallbacks []func()
-	*backend.Game
+	*Game
 }
 
 func (v *View) refresh() {
@@ -57,19 +56,19 @@ func (v *View) setupInputField() {
 			if input[0] == '!' {
 				switch input[1:] {
 				case "random":
-					v.ActionReceiver <- backend.ModeChange{
-						Mode: backend.Random{},
+					v.ActionReceiver <- ModeChange{
+						Mode: Random{},
 					}
 				default:
 					target, _ := strconv.Atoi(input[1:])
-					v.ActionReceiver <- backend.ModeChange{
-						Mode: backend.Aim{
+					v.ActionReceiver <- ModeChange{
+						Mode: Aim{
 							Target: target,
 						},
 					}
 				}
 			} else {
-				v.ActionReceiver <- backend.Attack{
+				v.ActionReceiver <- Attack{
 					Action: nil,
 					Text:   input,
 					ID:     "",
@@ -125,7 +124,7 @@ func (v *View) drawPlayerView() {
 	}
 }
 
-func NewView(game *backend.Game) *View {
+func NewView(game *Game) *View {
 	runewidth.DefaultCondition = &runewidth.Condition{EastAsianWidth: false}
 
 	app := tview.NewApplication()
