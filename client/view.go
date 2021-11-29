@@ -52,6 +52,10 @@ func (v *View) setupInputField() {
 		switch event.Key() {
 		case tcell.KeyEnter:
 			input := v.inputField.GetText()
+			if len(input) == 0 {
+				return event
+			}
+
 			if input[0] == '!' {
 				switch input[1:] {
 				case "random":
@@ -70,7 +74,6 @@ func (v *View) setupInputField() {
 				v.ActionReceiver <- Attack{
 					Action: nil,
 					Text:   input,
-					ID:     "",
 				}
 			}
 

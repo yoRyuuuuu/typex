@@ -119,16 +119,16 @@ func (s *GameServer) Connect(ctx context.Context, req *proto.ConnectRequest) (*p
 
 	log.Printf("connect this server [Name: %v]", req.GetName())
 	s.mu.Lock()
-	token := uuid.New()
+	id := uuid.New()
 
 	// プレイヤー情報をゲームサーバに登録
-	s.game.PlayerID = append(s.game.PlayerID, token)
-	s.game.Problem[token] = NewDatasetIterator()
+	s.game.PlayerID = append(s.game.PlayerID, id)
+	s.game.Problem[id] = NewDatasetIterator()
 	playerInfo := &PlayerInfo{
 		Health: InitialHealth,
 		Name:   req.GetName(),
 	}
-	s.game.PlayerInfo[token] = playerInfo
+	s.game.PlayerInfo[id] = playerInfo
 
 	players := []*proto.Player{}
 	for _, clt := range s.clients {
@@ -149,7 +149,7 @@ func (s *GameServer) Connect(ctx context.Context, req *proto.ConnectRequest) (*p
 			Event: &proto.Response_Join{
 				Join: &proto.Join{
 					Player: &proto.Player{
-						Id:     token.String(),
+						Id:     id.String(),
 						Name:   req.GetName(),
 						Health: InitialHealth,
 					},
@@ -163,14 +163,14 @@ func (s *GameServer) Connect(ctx context.Context, req *proto.ConnectRequest) (*p
 	}
 
 	player := &proto.Player{
-		Id:     token.String(),
+		Id:     id.String(),
 		Name:   req.GetName(),
 		Health: InitialHealth,
 	}
 	players = append(players, player)
 
-	s.clients[token] = &client{
-		id:          token,
+	s.clients[id] = &client{
+		id:          id,
 		done:        make(chan error),
 		lastMessage: time.Now(),
 		name:        req.GetName(),
@@ -182,8 +182,7 @@ func (s *GameServer) Connect(ctx context.Context, req *proto.ConnectRequest) (*p
 
 	fmt.Println(players)
 	return &proto.ConnectResponse{
-		Token:  token.String(),
-		Health: int64(InitialHealth),
+		Id:     id.String(),
 		Player: players,
 	}, nil
 }
@@ -192,7 +191,7 @@ func (s *GameServer) handleAttackRequest(req *proto.Request, clt *client) {
 	s.game.ActionChannel <- AttackAction{
 		ID:     clt.id,
 		Text:   req.GetAttack().GetText(),
-		Target: req.GetAttack().GetId(),
+		Target: req.GetAttack().GetTargetId(),
 	}
 }
 

@@ -5,15 +5,14 @@ type Action interface{}
 type Attack struct {
 	Action
 	Text string
-	ID   string
 }
-
-type Mode interface{}
 
 type ModeChange struct {
 	Action
 	Mode
 }
+
+type Mode interface{}
 
 type Random struct {
 	Mode

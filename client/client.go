@@ -1,13 +1,11 @@
 package client
 
 import (
-	"context"
 	"log"
 	"math/rand"
 	"time"
 
 	"github.com/yoRyuuuuu/typex/proto"
-	"google.golang.org/grpc/metadata"
 )
 
 func init() {
@@ -15,106 +13,62 @@ func init() {
 }
 
 type GameClient struct {
-	Stream proto.Game_StreamClient
-	game   *Game
+	Stream       proto.Game_StreamClient
+	EventChannel chan Event
 }
 
-func NewGameClient(game *Game) *GameClient {
+func NewGameClient() *GameClient {
 	return &GameClient{
-		game: game,
+		Stream:       nil,
+		EventChannel: make(chan Event),
 	}
-}
-
-func (c *GameClient) Connect(grpcClient proto.GameClient, playerName string) error {
-	req := proto.ConnectRequest{
-		Name: playerName,
-	}
-
-	res, err := grpcClient.Connect(context.Background(), &req)
-	if err != nil {
-		return err
-	}
-
-	c.game.ID = res.GetToken()
-	for _, player := range res.GetPlayer() {
-		playerInfo := &PlayerInfo{
-			ID:     player.Id,
-			Name:   player.Name,
-			Health: int(player.Health),
-		}
-		c.game.PlayerInfo[player.Id] = playerInfo
-		if player.Id != c.game.ID {
-			c.game.PlayerID = append(c.game.PlayerID, player.Id)
-		}
-	}
-
-	header := metadata.New(map[string]string{"authorization": res.Token})
-	ctx := metadata.NewOutgoingContext(context.Background(), header)
-	stream, err := grpcClient.Stream(ctx)
-	if err != nil {
-		return err
-	}
-
-	c.Stream = stream
-
-	return nil
 }
 
 func (c *GameClient) Start() {
-	go func() {
-		for {
-			res, err := c.Stream.Recv()
-			if err != nil {
-				log.Printf("can not receive %v", err)
-				return
-			}
+	go c.watchEvent()
+}
 
-			switch res.GetEvent().(type) {
-			case *proto.Response_Question:
-				c.game.EventChannel <- QuestionEvent{
-					Text: res.GetQuestion().GetText(),
-				}
-			case *proto.Response_Start:
-				c.game.EventChannel <- StartEvent{}
-			case *proto.Response_Finish:
-				c.game.EventChannel <- FinishEvent{
-					Winner: res.GetFinish().GetWinner(),
-				}
-			case *proto.Response_Join:
-				c.game.EventChannel <- JoinEvent{
-					ID:     res.GetJoin().GetPlayer().Id,
-					Name:   res.GetJoin().GetPlayer().Name,
-					Health: int(res.GetJoin().GetPlayer().Health),
-				}
-			case *proto.Response_Damage:
-				// 体力を更新する処理
-				c.game.EventChannel <- DamageEvent{
-					ID:     res.GetDamage().GetId(),
-					Damage: int(res.GetDamage().GetHealth()),
-				}
+// サーバからのEvent通知を捌く
+func (c *GameClient) watchEvent() {
+	for {
+		res, err := c.Stream.Recv()
+		if err != nil {
+			log.Printf("can not receive %v\n", err)
+			return
+		}
+		switch res.GetEvent().(type) {
+		case *proto.Response_Question: // お題通知
+			c.EventChannel <- QuestionEvent{
+				Text: res.GetQuestion().GetText(),
+			}
+		case *proto.Response_Start: // ゲーム開始通知
+			c.EventChannel <- StartEvent{}
+		case *proto.Response_Finish: // ゲーム終了通知
+			c.EventChannel <- FinishEvent{
+				Winner: res.GetFinish().GetWinner(),
+			}
+		case *proto.Response_Join: // 参加通知
+			c.EventChannel <- JoinEvent{
+				ID:     res.GetJoin().GetPlayer().Id,
+				Name:   res.GetJoin().GetPlayer().Name,
+				Health: int(res.GetJoin().GetPlayer().Health),
+			}
+		case *proto.Response_Damage: // ダメージ通知
+			c.EventChannel <- DamageEvent{
+				ID:     res.GetDamage().GetId(),
+				Damage: int(res.GetDamage().GetHealth()),
 			}
 		}
-	}()
+	}
+}
 
-	go func() {
-		for {
-			action := <-c.game.ActionSender
-
-			switch action := action.(type) {
-			case Attack:
-				req := &proto.Request{
-					Action: &proto.Request_Attack{
-						Attack: &proto.Attack{
-							Text: action.Text,
-							Id:   action.ID,
-						},
-					},
-				}
-
-				if err := c.Stream.Send(req); err != nil {
-					log.Printf("%v", err)
-				}
-			}
-		}
-	}()
+func (c *GameClient) handleAttackAction(text string, target string) {
+	req := &proto.Request{
+		Action: &proto.Request_Attack{
+			Attack: &proto.Attack{Text: text, TargetId: target}},
+	}
+	if err := c.Stream.Send(req); err != nil {
+		log.Printf("can not send %v\n", err)
+		return
+	}
 }

@@ -7,39 +7,22 @@ service Game {
     rpc Stream(stream Request) returns (stream Response) {}
 }
 
-message ConnectRequest {
-    string name = 1;
-}
-
-message ConnectResponse {
-    string token = 1;
-    repeated Player player = 3;
-}
-
-message Attack {
-    string text = 1;
-    string id = 2;
-}
-
-message Question {
-    string text = 1;
-}
-
-message Start {
-    string problem = 1;
-}
-
-message Request {
-    oneof action {
-        Attack attack = 1;
-    }
-}
-
 message Player {
     string id = 1;
     string name = 2;
     int64 health = 3;
 }
+
+message ConnectRequest {
+    string name = 1;
+}
+
+message ConnectResponse {
+    string id = 1;
+    repeated Player player = 2;
+}
+
+message Start {}
 
 message Finish {
     string winner = 1;
@@ -49,11 +32,24 @@ message Join {
     Player player = 1;
 }
 
+message Attack {
+    string text = 1;
+    string target_id = 2;
+}
+
+message Question {
+    string text = 1;
+}
+
 message Damage {
-    // 攻撃を受けるPlayerのID
     string id = 1;
-    // 体力の数値
     int64 health = 2;
+}
+
+message Request {
+    oneof action {
+        Attack attack = 1;
+    }
 }
 
 message Response {

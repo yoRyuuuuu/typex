@@ -1,10 +1,14 @@
 package client
 
 import (
+	"context"
 	"fmt"
 	"math/rand"
 	"sync"
 	"time"
+
+	"github.com/yoRyuuuuu/typex/proto"
+	"google.golang.org/grpc/metadata"
 )
 
 type PlayerInfo struct {
@@ -14,36 +18,69 @@ type PlayerInfo struct {
 }
 
 type Game struct {
-	EventChannel   chan Event
 	ActionReceiver chan Action
-	ActionSender   chan Action
 	PlayerInfo     map[string]*PlayerInfo
 	PlayerID       []string
 	Target         string
 	Problem        string
-	Log            string
 	ID             string
 	Logger         Logger
 	Mutex          sync.Mutex
+	*GameClient
 }
 
-func NewGame() *Game {
+func NewGame(gameClient *GameClient) *Game {
 	game := &Game{
-		EventChannel:   make(chan Event),
 		ActionReceiver: make(chan Action),
-		ActionSender:   make(chan Action),
 		PlayerInfo:     make(map[string]*PlayerInfo),
 		PlayerID:       []string{},
-		Logger:         *NewLogger(),
 		Target:         "",
 		Problem:        "",
 		ID:             "",
+		Logger:         *NewLogger(),
+		Mutex:          sync.Mutex{},
+		GameClient:     gameClient,
+	}
+	return game
+}
+
+func (g *Game) Start() {
+	go g.watchEvent()
+	go g.watchAction()
+}
+
+// サーバ接続処理
+func (g *Game) Connect(grpcClient proto.GameClient, playerName string) error {
+	req := proto.ConnectRequest{
+		Name: playerName,
+	}
+	res, err := grpcClient.Connect(context.Background(), &req)
+	if err != nil {
+		return err
 	}
 
-	go game.watchEvent()
-	go game.watchAction()
+	g.ID = res.GetId()
+	for _, player := range res.GetPlayer() {
+		playerInfo := &PlayerInfo{
+			ID:     player.Id,
+			Name:   player.Name,
+			Health: int(player.Health),
+		}
+		g.PlayerInfo[player.Id] = playerInfo
+		if player.Id != g.ID {
+			g.PlayerID = append(g.PlayerID, player.Id)
+		}
+	}
 
-	return game
+	header := metadata.New(map[string]string{"authorization": res.Id})
+	ctx := metadata.NewOutgoingContext(context.Background(), header)
+	stream, err := grpcClient.Stream(ctx)
+	if err != nil {
+		return err
+	}
+
+	g.Stream = stream
+	return nil
 }
 
 func (g *Game) watchEvent() {
@@ -69,10 +106,7 @@ func (g *Game) watchAction() {
 		action := <-g.ActionReceiver
 		switch action := action.(type) {
 		case Attack:
-			g.ActionSender <- Attack{
-				Text: action.Text,
-				ID:   g.Target,
-			}
+			g.handleAttackAction(action.Text, g.Target)
 		case ModeChange:
 			g.handleModeChangeAction(action)
 		}
@@ -120,13 +154,9 @@ func (g *Game) handleStartEvent(event StartEvent) {
 
 func (g *Game) handleFinishEvent(event FinishEvent) {
 	g.Logger.PutString(fmt.Sprintf("Finish! %v Win!!\n", event.Winner))
-	g.Logger.PutString(fmt.Sprintf("Press contrl+c to exit\n"))
+	g.Logger.PutString(fmt.Sprintln("Press contrl+c to exit"))
 }
 
 func (g *Game) handleQuestionEvent(event QuestionEvent) {
 	g.Problem = event.Text
-}
-
-func (g *Game) CheckAnswer(input string) bool {
-	return input == g.Problem
 }
