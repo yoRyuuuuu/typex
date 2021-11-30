@@ -1,11 +1,13 @@
 package client
 
 import (
+	"context"
 	"log"
 	"math/rand"
 	"time"
 
 	"github.com/yoRyuuuuu/typex/proto"
+	"google.golang.org/grpc/metadata"
 )
 
 func init() {
@@ -71,4 +73,21 @@ func (c *GameClient) handleAttackAction(text string, target string) {
 		log.Printf("can not send %v\n", err)
 		return
 	}
+}
+
+// サーバ接続処理
+func (g *Game) connect(grpcClient proto.GameClient, name string) (*proto.ConnectResponse, error) {
+	req := proto.ConnectRequest{Name: name}
+	resp, err := grpcClient.Connect(context.Background(), &req)
+	if err != nil {
+		return nil, err
+	}
+	header := metadata.New(map[string]string{"authorization": resp.Id})
+	ctx := metadata.NewOutgoingContext(context.Background(), header)
+	stream, err := grpcClient.Stream(ctx)
+	if err != nil {
+		return nil, err
+	}
+	g.Stream = stream
+	return resp, nil
 }
