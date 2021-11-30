@@ -36,9 +36,9 @@ func (v *View) refresh() {
 func (v *View) setupProblemView() {
 	v.problemView.SetTitle("Problem").
 		SetBorder(true).
-		SetTitle(v.Problem)
+		SetTitle(v.Word)
 	callback := func() {
-		v.problemView.SetText(v.Problem)
+		v.problemView.SetText(v.Word)
 	}
 	v.drawCallbacks = append(v.drawCallbacks, callback)
 }
@@ -106,11 +106,11 @@ func (v *View) drawPlayerView() {
 	mine := tview.NewTextView()
 	mine.SetTitle("YOU").
 		SetBorder(true)
-	mine.SetText(fmt.Sprintf("HP: %v", v.PlayerInfo[v.ID].Health))
+	mine.SetText(fmt.Sprintf("HP: %v", v.PlayerStatuses[v.MyID].Health))
 	v.playerView.AddItem(mine, 3, 0, false)
-	for _, id := range v.PlayerID {
+	for _, id := range v.EnemyIDs {
 		// 他プレイヤーのスコアを描画
-		player := v.PlayerInfo[id]
+		player := v.PlayerStatuses[id]
 		text := tview.NewTextView()
 
 		name := player.Name
@@ -169,7 +169,6 @@ func NewView(game *Game) *View {
 
 func (v *View) Start() {
 	go v.refresh()
-
 	if err := v.app.Run(); err != nil {
 		panic(err)
 	}

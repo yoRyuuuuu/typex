@@ -11,7 +11,7 @@ import (
 	"google.golang.org/grpc/metadata"
 )
 
-type PlayerInfo struct {
+type PlayerStatus struct {
 	ID     string
 	Name   string
 	Health int
@@ -19,11 +19,11 @@ type PlayerInfo struct {
 
 type Game struct {
 	ActionReceiver chan Action
-	PlayerInfo     map[string]*PlayerInfo
-	PlayerID       []string
+	PlayerStatuses map[string]*PlayerStatus
+	EnemyIDs       []string
+	MyID           string
 	Target         string
-	Problem        string
-	ID             string
+	Word           string
 	Logger         Logger
 	Mutex          sync.Mutex
 	*GameClient
@@ -32,11 +32,11 @@ type Game struct {
 func NewGame(gameClient *GameClient) *Game {
 	game := &Game{
 		ActionReceiver: make(chan Action),
-		PlayerInfo:     make(map[string]*PlayerInfo),
-		PlayerID:       []string{},
+		PlayerStatuses: make(map[string]*PlayerStatus),
+		MyID:           "",
+		EnemyIDs:       []string{},
 		Target:         "",
-		Problem:        "",
-		ID:             "",
+		Word:           "",
 		Logger:         *NewLogger(),
 		Mutex:          sync.Mutex{},
 		GameClient:     gameClient,
@@ -59,16 +59,16 @@ func (g *Game) Connect(grpcClient proto.GameClient, playerName string) error {
 		return err
 	}
 
-	g.ID = res.GetId()
+	g.MyID = res.GetId()
 	for _, player := range res.GetPlayer() {
-		playerInfo := &PlayerInfo{
+		status := &PlayerStatus{
 			ID:     player.Id,
 			Name:   player.Name,
 			Health: int(player.Health),
 		}
-		g.PlayerInfo[player.Id] = playerInfo
-		if player.Id != g.ID {
-			g.PlayerID = append(g.PlayerID, player.Id)
+		g.PlayerStatuses[player.Id] = status
+		if status.ID != g.MyID {
+			g.EnemyIDs = append(g.EnemyIDs, status.ID)
 		}
 	}
 
@@ -116,32 +116,32 @@ func (g *Game) watchAction() {
 func (g *Game) handleModeChangeAction(action ModeChange) {
 	switch mode := action.Mode.(type) {
 	case Random:
-		idx := rand.Intn(len(g.PlayerID))
-		g.Target = g.PlayerID[idx]
+		id := g.EnemyIDs[rand.Intn(len(g.EnemyIDs))]
+		g.Target = g.PlayerStatuses[id].ID
 	case Aim:
-		if mode.Target < len(g.PlayerID) {
-			g.Target = g.PlayerID[mode.Target]
+		if mode.Target < len(g.EnemyIDs) {
+			g.Target = g.EnemyIDs[mode.Target]
 		}
 	}
 }
 
 func (g *Game) handleDamageEvent(event DamageEvent) {
-	g.PlayerInfo[event.ID].Health = event.Damage
+	g.PlayerStatuses[event.ID].Health = event.Damage
 }
 
 func (g *Game) handleJoinEvent(event JoinEvent) {
-	playerInfo := PlayerInfo{
+	playerInfo := PlayerStatus{
 		ID:     event.ID,
 		Name:   event.Name,
 		Health: event.Health,
 	}
-	g.PlayerID = append(g.PlayerID, playerInfo.ID)
-	g.PlayerInfo[event.ID] = &playerInfo
+	g.EnemyIDs = append(g.EnemyIDs, playerInfo.ID)
+	g.PlayerStatuses[event.ID] = &playerInfo
 }
 
 func (g *Game) handleStartEvent(event StartEvent) {
-	idx := rand.Intn(len(g.PlayerID))
-	g.Target = g.PlayerID[idx]
+	idx := rand.Intn(len(g.EnemyIDs))
+	g.Target = g.EnemyIDs[idx]
 	limit := 5 * time.Second
 	count := 0
 	output := []string{"4", "3", "2", "1", "start!!"}
@@ -158,5 +158,5 @@ func (g *Game) handleFinishEvent(event FinishEvent) {
 }
 
 func (g *Game) handleQuestionEvent(event QuestionEvent) {
-	g.Problem = event.Text
+	g.Word = event.Text
 }
