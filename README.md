@@ -1,26 +1,23 @@
 # Typex
+
 対戦型バトルロイヤル形式のタイピングゲームです．
 
 # Quick Start
+
 ## Build
+
 ```
 make build
 ```
-## Server(Windows)
+
+## Server
+
 ```
-./release/windows/server.exe
-```
-## Server(Linux)
-```
-./release/linux/server
+typex-server -player="ゲームのプレイヤー数" -port="ポート番号"
 ```
 
-## Client(Windows)
-```
-./release/windows/client.exe
-```
+## Client
 
-## Client(Linux)
 ```
-./release/linux/client
+typex-client -name="ユーザ名" -addr="サーバの IP アドレス" -port="ポート番号"
 ```
