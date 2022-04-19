@@ -1,0 +1,16 @@
+Player = 3
+Name = Hoge
+
+client:
+	go run ./cmd/client/main.go -name ${Name}
+
+server:
+	go run ./cmd/server/main.go -player ${Player}
+
+build:
+	GOOS=windows GOARCH=amd64 go build -o release/windows/typex-client.exe -ldflags "-s -w" ./cmd/client/main.go
+	GOOS=windows GOARCH=amd64 go build -o release/windows/typex-server.exe -ldflags "-s -w" ./cmd/server/main.go
+	GOOS=darwin GOARCH=amd64 go build -o release/darwin/typex-client -ldflags "-s -w" ./cmd/client/main.go	
+	GOOS=darwin GOARCH=amd64 go build -o release/darwin/typex-server -ldflags "-s -w" ./cmd/server/main.go	
+	GOOS=linux GOARCH=amd64 go build -o release/linux/typex-client -ldflags "-s -w" ./cmd/client/main.go
+	GOOS=linux GOARCH=amd64 go build -o release/linux/typex-server -ldflags "-s -w" ./cmd/server/main.go
