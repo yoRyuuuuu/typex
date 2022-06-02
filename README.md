@@ -21,3 +21,7 @@ typex-server -player="ゲームのプレイヤー数" -port="ポート番号"
 ```
 typex-client -name="ユーザ名" -addr="サーバの IP アドレス" -port="ポート番号"
 ```
+
+## Demo
+
+![demo](./images/demo.png)
