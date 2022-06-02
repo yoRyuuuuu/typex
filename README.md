@@ -1,6 +1,6 @@
 # Typex
 
-対戦型バトルロイヤル形式のタイピングゲームです．
+対戦型バトルロイヤル形式のタイピングゲームです
 
 # Quick Start
 
@@ -19,7 +19,7 @@ typex-server -player="ゲームのプレイヤー数" -port="ポート番号"
 ## Client
 
 ```
-typex-client -name="ユーザ名" -addr="サーバの IP アドレス" -port="ポート番号"
+typex-client -name="プレイヤー名" -addr="サーバのIPアドレス" -port="ポート番号"
 ```
 
 ## Demo
